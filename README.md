@@ -1,4 +1,5 @@
 # homebridge-onkyo
+[![NPM Version](https://img.shields.io/npm/v/homebridge-onkyo.svg)](https://www.npmjs.com/package/homebridge-onkyo)
 Homebridge module for Onkyo receivers (tested on TX-NR609 and TX-8050)
 
 # Description
@@ -9,7 +10,8 @@ Ensure that the Onkyo is controllable using the OnkyoRemote3 iOS app.
 
 For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples directory and see if you can run 3.js. "node 3.js". It should output all available commands.
 
-New version 1.x includes support for volume, mute, and has options for setting default_input.
+New version 0.4.x includes support for volume, mute, and has options for setting default_input.
+Existing users be sure to update the "accessory" config to "Onkyo".
 
 For Siri Control of Volume and Mute - Use an app like EVE which has the volume control slider and create scenes for "Volume Mute" or "Volume Unmute", and/or various volume level scenes like "Volume Low" or "Volume Loud". It may be easiest to set the volume first using the OnkyoRemote3 app and then creating the scene so the volume is pre-set.
 
