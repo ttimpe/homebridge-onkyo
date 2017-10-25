@@ -10,7 +10,7 @@ module.exports = function(homebridge)
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
   
-  homebridge.registerAccessory("homebridge-onkyo-avr", "OnkyoAVR", HttpStatusAccessory);
+  homebridge.registerAccessory("homebridge-onkyo", "Onkyo", HttpStatusAccessory);
 }
 
 function HttpStatusAccessory(log, config) 
@@ -55,8 +55,6 @@ function HttpStatusAccessory(log, config)
 		{host: this.ip_address, reconnect: true, model: this.model}
 	);
 
-	
-	//that.log("hello - "+config["ip_address"]);
 	// Status Polling
 	if (this.switchHandling == "poll") {
 		var powerurl = this.status_url;
