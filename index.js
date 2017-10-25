@@ -27,8 +27,8 @@ function HttpStatusAccessory(log, config)
 	this.poll_status_interval = config["poll_status_interval"] || "0";
 
 	this.defaultInput = config["default_input"]; 
-    this.defaultVolume = config['default_volume'];
-    this.maxVolume = config['max_volume'] || 30;
+	this.defaultVolume = config['default_volume'];
+	this.maxVolume = config['max_volume'] || 30;
 	this.mapVolume100 = config['map_volume_100'] || false;
 	
 	this.state = false;
