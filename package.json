@@ -1,7 +1,7 @@
 {
   "name": "homebridge-onkyo",
   "version": "0.4.1",
-  "description": "Homebridge module for the Onkyo Receivers",
+  "description": "Homebridge plugin for Onkyo Receivers",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -26,7 +26,7 @@
     "node": ">=0.12.0",
     "homebridge": ">=0.2.0"
   },
-  "author": "gw-wiscon <gw.wiscon@gmail.com> (http://)",
+  "author": "gw-wiscon <gw.wiscon@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/ToddGreenfield/homebridge-onkyo/issues"
