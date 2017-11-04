@@ -10,6 +10,7 @@ This is an enhanced fork from the original/unmaintained homebridge-onkyo-avr plu
 Existing users of my original fork or gw-wiscon's be sure to update the "accessory" config to "Onkyo".
 
 # Changelog
+
 Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
 Version 0.4.x includes support for volume, mute, and has options for setting default_input.
 
@@ -42,7 +43,7 @@ Example accessory config (needs to be added to the homebridge config.json):
 		"accessory": "Onkyo",
 		"name": "Stereo",
 		"ip_address": "10.0.1.23",
-		"model" : "TX-8050",
+		"model" : "TX-NR609",
 		"poll_status_interval": "900",
 		"default_input": "net",
 		"default_volume": "10",
@@ -58,7 +59,7 @@ Field           			| Description
 **accessory**   			| (required) Must always be "Onkyo".
 **name**        			| (required) The name you want to use for control of the Onkyo accessories.
 **ip_address**  			| (required) The internal ip address of your Onkyo.
-**model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.yaml file. If your model is not listed, you can use the TX-8050 if your model supports the Integra Serial Communication Protocol (ISCP).
+**model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.yaml file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
 **poll_status_interval**  	| (Optional) Poll Status Interval. Defaults to 0 or no polling.
 **default_input**  			| (Optional) A valid source input. Default will use last known input. See output of 3.js in eiscp/examples for options.
 **default_volume**  		| (optional) Initial receiver volume upon powerup. This is the true volume number, not a percentage. Ignored if powerup from device knob or external app (like OnkyoRemote3).
