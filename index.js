@@ -24,7 +24,20 @@ function HttpStatusAccessory(log, config)
 	this.name = config["name"];
 	this.ip_address	= config["ip_address"];
 	this.model = config["model"];
+	this.zone = config["zone"] || "main";
 	
+	this.cmdMap = new Array();
+	this.cmdMap["main"] = new Array();
+	this.cmdMap["main"]["power"] = "system-power";
+	this.cmdMap["main"]["volume"] = "master-volume";
+	this.cmdMap["main"]["muting"] = "audio-muting";
+	this.cmdMap["main"]["input"] = "input-selector";
+	this.cmdMap["zone2"] = new Array();
+	this.cmdMap["zone2"]["power"] = "power";
+	this.cmdMap["zone2"]["volume"] = "volume";
+	this.cmdMap["zone2"]["muting"] = "muting";
+	this.cmdMap["zone2"]["input"] = "selector";
+	 
 	this.poll_status_interval = config["poll_status_interval"] || "0";
 	this.defaultInput = config["default_input"]; 
 	this.defaultVolume = config['default_volume'];
@@ -57,11 +70,11 @@ function HttpStatusAccessory(log, config)
 	this.eiscp.on('debug', this.eventDebug.bind(this));
 	this.eiscp.on('error', this.eventError.bind(this));
 	this.eiscp.on('connect', this.eventConnect.bind(this));
-	this.eiscp.on('system-power', this.eventSystemPower.bind(this));
-	this.eiscp.on('master-volume', this.eventVolume.bind(this));
+	this.eiscp.on(this.zone + '.' + this.cmdMap[this.zone]["power"], this.eventSystemPower.bind(this));
+	this.eiscp.on(this.zone + "." + this.cmdMap[this.zone]["volume"], this.eventVolume.bind(this));
 	this.eiscp.on('close', this.eventClose.bind(this));
-	this.eiscp.on('audio-muting', this.eventAudioMuting.bind(this));
-	this.eiscp.on('input-selector', this.eventInput.bind(this));
+	this.eiscp.on(this.zone + "." + this.cmdMap[this.zone]["muting"], this.eventAudioMuting.bind(this));
+	this.eiscp.on(this.zone + "." + this.cmdMap[this.zone]["input"], this.eventInput.bind(this));
 	
 	this.eiscp.connect(
 		{host: this.ip_address, reconnect: true, model: this.model}
@@ -271,7 +284,7 @@ setPowerState: function(powerOn, callback, context) {
 	callback( null, that.state);
     if (powerOn) {
 		this.log("setPowerState - actual mode, power state: %s, switching to ON", that.state);
-		this.eiscp.command("system-power=on", function(error, response) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=on", function(error, response) {
 			//that.log( "PWR ON: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
 				that.state = false;
@@ -284,7 +297,7 @@ setPowerState: function(powerOn, callback, context) {
 					this.log("Attempting to set the default volume to "+this.defaultVolume);
 					if (powerOn && this.defaultVolume) {
 						that.log("Setting default volume to "+this.defaultVolume);
-						this.eiscp.command("master-volume:"+this.defaultVolume, function(error, response) {
+						this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":"+this.defaultVolume, function(error, response) {
 							if (error) {
 								that.log( "Error while setting default volume: %s", error);
 							}
@@ -294,7 +307,7 @@ setPowerState: function(powerOn, callback, context) {
 					this.log("Attempting to set the default input selector to "+this.defaultInput);
 					if (powerOn && this.defaultInput) {
 						that.log("Setting default input selector to "+this.defaultInput);
-						this.eiscp.command("input-selector="+this.defaultInput, function(error, response) {
+						this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "="+this.defaultInput, function(error, response) {
 							if (error) {
 								that.log( "Error while setting default input: %s", error);
 							}
@@ -304,7 +317,7 @@ setPowerState: function(powerOn, callback, context) {
 		}.bind(this) );
 	} else {
 		this.log("setPowerState - actual mode, power state: %s, switching to OFF", that.state);
-		this.eiscp.command("system-power=standby", function(error, response) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=standby", function(error, response) {
 			//that.log( "PWR OFF: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
 				that.state = false;
@@ -338,7 +351,7 @@ getPowerState: function(callback, context) {
 	//have the event later on execute changes
 	callback(null, this.state);
     this.log("getPowerState - actual mode, return state: ", this.state);
-	this.eiscp.command("system-power=query", function( error, data) {
+	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=query", function( error, data) {
 		if (error) {
 			that.state = false;
 			that.log( "getPowerState - PWR QRY: ERROR - current state: %s", that.state);
@@ -370,7 +383,7 @@ getVolumeState: function(callback, context) {
 	//have the event later on execute changes
 	callback(null, this.v_state);
     this.log("getVolumeState - actual mode, return v_state: ", this.v_state);
-	this.eiscp.command("master-volume=query", function( error, data) {
+	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + "=query", function( error, data) {
 		if (error) {
 			that.v_state = 0;
 			that.log( "getVolumeState - VOLUME QRY: ERROR - current v_state: %s", that.v_state);
@@ -417,7 +430,7 @@ setVolumeState: function(volumeLvl, callback, context) {
 	//have the event later on execute changes
 	callback( null, that.v_state);
 
-	this.eiscp.command("master-volume:" + that.v_state, function(error, response) {
+	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + that.v_state, function(error, response) {
 		if (error) {
 			that.v_state = 0;
 			that.log( "setVolumeState - VOLUME : ERROR - current v_state: %s", that.v_state);
@@ -449,7 +462,7 @@ getMuteState: function(callback, context) {
 	//have the event later on execute changes
 	callback(null, this.m_state);
     this.log("getMuteState - actual mode, return m_state: ", this.m_state);
-	this.eiscp.command("audio-muting=query", function( error, data) {
+	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=query", function( error, data) {
 		if (error) {
 			that.m_state = false;
 			that.log( "getMuteState - MUTE QRY: ERROR - current m_state: %s", that.m_state);
@@ -482,7 +495,7 @@ setMuteState: function(muteOn, callback, context) {
 	callback( null, that.m_state);
     if (that.m_state) {
 		this.log("setMuteState - actual mode, mute m_state: %s, switching to ON", that.m_state);
-		this.eiscp.command("audio-muting=on", function(error, response) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=on", function(error, response) {
 			if (error) {
 				that.m_state = false;
 				that.log( "setMuteState - MUTE ON: ERROR - current m_state: %s", that.m_state);
@@ -493,7 +506,7 @@ setMuteState: function(muteOn, callback, context) {
 		}.bind(this) );
 	} else {
 		this.log("setMuteState - actual mode, mute m_state: %s, switching to OFF", that.m_state);
-		this.eiscp.command("audio-muting=off", function(error, response) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=off", function(error, response) {
 			if (error) {
 				that.m_state = false;
 				that.log( "setMuteState - MUTE OFF: ERROR - current m_state: %s", that.m_state);
@@ -526,7 +539,7 @@ getInputSource: function(callback, context) {
 	//have the event later on execute changes
 	callback(null, this.i_state);
     this.log("getInputState - actual mode, return i_state: ", this.i_state);
-	this.eiscp.command("input-selector=query", function( error, data) {
+	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "=query", function( error, data) {
 		if (error) {
 			that.i_state = 1;
 			that.log( "getInputState - INPUT QRY: ERROR - current i_state: %s", that.i_state);
@@ -560,7 +573,7 @@ setInputSource: function(source, callback, context) {
 	//have the event later on execute changes
 	callback(null, that.i_state);
 	
-	this.eiscp.command("input-selector:" + RxInputs.Inputs[that.i_state].label, function(error, response) {
+	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + RxInputs.Inputs[that.i_state].label, function(error, response) {
 		if (error) {
 			that.log( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", that.i_state, source.toString());
 			if (that.switchService ) {
