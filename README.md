@@ -11,6 +11,7 @@ Existing users of my original fork or gw-wiscon's be sure to update the "accesso
 
 # Changelog
 
+Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
 Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
 Version 0.4.x includes support for volume, mute, and has options for setting default_input.
 
@@ -22,7 +23,6 @@ For Alexa Control of Volume, Mute, Input - (if using the Alexa plugin) - create 
 
 Complete re-write to convert to a Platform. This will allow for auto discovery of all receivers (if more than one exist), and other flexibility.
 Adding Speaker A/B on/off control
-Multi-Zone support
 Others...
 
 # Installation
@@ -48,7 +48,8 @@ Example accessory config (needs to be added to the homebridge config.json):
 		"default_input": "net",
 		"default_volume": "10",
 		"max_volume": "35",
-		"map_volume_100": true
+		"map_volume_100": true,
+    "zone" : "zone2"
 	}
 ]
  ```
@@ -65,3 +66,4 @@ Field           			| Description
 **default_volume**  		| (optional) Initial receiver volume upon powerup. This is the true volume number, not a percentage. Ignored if powerup from device knob or external app (like OnkyoRemote3).
 **max_volume**  			| (optional) Receiver volume max setting. This is a true volume number, not a percentage, and intended so there is not accidental setting of volume to 80. Ignored by external apps (like OnkyoRemote3). Defaults to 30.
 **map_volume_100**  		| (optional) Will remap the volume percentages that appear in the Home app so that the configured max_volume will appear as 100% in the Home app. For example, if the max_volume is 30, then setting the volume slider to 50% would set the receiver's actual volume to 15. Adjusting the stereo volume knob to 35 will appear as 100% in the Home app. This option could confuse some users to it defaults to off false, but it does give the user finer volume control especially when sliding volume up and down in the Home app. Defaults to False.
+**zone**               (optional) Defaults to main. Optionally control zone2 where supported.
