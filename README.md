@@ -11,9 +11,9 @@ Existing users of my original fork or gw-wiscon's be sure to update the "accesso
 
 # Changelog
 
--Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
--Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
--Version 0.4.x includes support for volume, mute, and has options for setting default_input.
+* Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
+* Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
+* Version 0.4.x includes support for volume, mute, and has options for setting default_input.
 
 For Siri Control of Volume, Mute, and Input - Use an app like EVE which has control sliders and create scenes for "Volume Mute" or "Volume Unmute", and/or various volume level scenes like "Volume Low" or "Volume Loud", or for inputs like "input network" or "input fm". It may be easiest to set the volume or Input first using the OnkyoRemote3 app and then creating the scenes so the volume or input is pre-set (without using the slider).
 
