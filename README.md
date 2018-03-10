@@ -2,7 +2,7 @@
 [![NPM Version](https://img.shields.io/npm/v/homebridge-onkyo.svg)](https://www.npmjs.com/package/homebridge-onkyo)
 
 Homebridge plugin for Onkyo Receivers
-Should work for all supported models as listed in the yaml file under node_modules/eiscp/eiscp-commands.yaml.
+Should work for all supported models as listed in the node_modules/eiscp/eiscp-commands.json. If your model is not listed, try TX-NR609.
 
 # Description
 
@@ -60,7 +60,7 @@ Field           			| Description
 **accessory**   			| (required) Must always be "Onkyo".
 **name**        			| (required) The name you want to use for control of the Onkyo accessories.
 **ip_address**  			| (required) The internal ip address of your Onkyo.
-**model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.yaml file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
+**model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.json file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
 **poll_status_interval**  	| (Optional) Poll Status Interval. Defaults to 0 or no polling.
 **default_input**  			| (Optional) A valid source input. Default will use last known input. See output of 3.js in eiscp/examples for options.
 **default_volume**  		| (optional) Initial receiver volume upon powerup. This is the true volume number, not a percentage. Ignored if powerup from device knob or external app (like OnkyoRemote3).

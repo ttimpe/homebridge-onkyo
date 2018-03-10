@@ -14,7 +14,7 @@ module.exports = function(homebridge)
   homebridge.registerAccessory("homebridge-onkyo", "Onkyo", HttpStatusAccessory);
 }
 
-function HttpStatusAccessory(log, config) 
+function HttpStatusAccessory(log, config)
 {
 	this.log = log;
 	var that = this;
@@ -70,11 +70,11 @@ function HttpStatusAccessory(log, config)
 	this.eiscp.on('debug', this.eventDebug.bind(this));
 	this.eiscp.on('error', this.eventError.bind(this));
 	this.eiscp.on('connect', this.eventConnect.bind(this));
-	this.eiscp.on(this.zone + '.' + this.cmdMap[this.zone]["power"], this.eventSystemPower.bind(this));
-	this.eiscp.on(this.zone + "." + this.cmdMap[this.zone]["volume"], this.eventVolume.bind(this));
-	this.eiscp.on('close', this.eventClose.bind(this));
-	this.eiscp.on(this.zone + "." + this.cmdMap[this.zone]["muting"], this.eventAudioMuting.bind(this));
-	this.eiscp.on(this.zone + "." + this.cmdMap[this.zone]["input"], this.eventInput.bind(this));
+  this.eiscp.on('close', this.eventClose.bind(this));
+	this.eiscp.on(this.cmdMap[this.zone]["power"], this.eventSystemPower.bind(this));
+	this.eiscp.on(this.cmdMap[this.zone]["volume"], this.eventVolume.bind(this));
+	this.eiscp.on(this.cmdMap[this.zone]["muting"], this.eventAudioMuting.bind(this));
+	this.eiscp.on(this.cmdMap[this.zone]["input"], this.eventInput.bind(this));
 
 	this.eiscp.connect(
 		{host: this.ip_address, reconnect: true, model: this.model}
@@ -89,10 +89,10 @@ function HttpStatusAccessory(log, config)
 			if (hold.includes(',')) {
 					hold = hold.substring(0,hold.indexOf(','));
 			}
-			if (exkey.includes('�') || exkey.includes('�')) {
-					exkey = exkey.replace(/\�/g, "");
-					exkey = exkey.replace(/\�/g, "");
-			}
+      if (exkey.includes('“') || exkey.includes('“')) {
+          exkey = exkey.replace(/\“/g, "");
+          exkey = exkey.replace(/\”/g, "");
+      }
 			newobj = newobj + '{ "code":"'+exkey+'" , "label":"'+hold+'" },';
 	}
 			newobj = newobj + '{ "code":"2B" , "label":"network" } ]}';
