@@ -11,20 +11,22 @@ module.exports = function(homebridge)
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
   RxTypes = require('./RxTypes.js')(homebridge);
-  homebridge.registerAccessory("homebridge-onkyo", "Onkyo", HttpStatusAccessory);
+  homebridge.registerAccessory("homebridge-onkyo-tv", "Onkyo-tv", OnkyoPlatform);
 }
 
-function HttpStatusAccessory(log, config)
+function OnkyoPlatform (log, config)
 {
 	this.log = log;
 	var that = this;
 	this.eiscp = require('eiscp');
 	this.setAttempt = 0;
+	this.enabledServices = []
 
 	this.name = config["name"];
 	this.ip_address	= config["ip_address"];
 	this.model = config["model"];
 	this.zone = config["zone"] || "main";
+	this.inputs = config["inputs"];
 
 	this.cmdMap = new Array();
 	this.cmdMap["main"] = new Array();
@@ -43,6 +45,17 @@ function HttpStatusAccessory(log, config)
 	this.defaultVolume = config['default_volume'];
 	this.maxVolume = config['max_volume'] || 30;
 	this.mapVolume100 = config['map_volume_100'] || false;
+
+	this.buttons = {
+		[Characteristic.RemoteKey.ARROW_UP]: 'up',
+		[Characteristic.RemoteKey.ARROW_DOWN]: 'down',
+		[Characteristic.RemoteKey.ARROW_LEFT]: 'left',
+		[Characteristic.RemoteKey.ARROW_RIGHT]: 'right',
+		[Characteristic.RemoteKey.SELECT]: 'enter',
+		[Characteristic.RemoteKey.BACK]: 'exit',
+		[Characteristic.RemoteKey.EXIT]: 'exit',
+		[Characteristic.RemoteKey.INFORMATION]: 'home',
+	};
 
 	this.state = false;
 	this.m_state = false;
@@ -96,7 +109,8 @@ function HttpStatusAccessory(log, config)
 			newobj = newobj + '{ "code":"'+exkey+'" , "label":"'+hold+'" },';
 	}
 			newobj = newobj + '{ "code":"2B" , "label":"network" } ]}';
-	RxInputs = JSON.parse(newobj);
+	RxInputs = JSON.parse(newobj); // ******
+	console.log(RxInputs)
 
 // Status Polling
 	if (this.switchHandling == "poll") {
@@ -114,11 +128,11 @@ function HttpStatusAccessory(log, config)
 		statusemitter.on("statuspoll", function(data) {
 			that.state = data;
 			that.log.debug("event - PWR status poller - new state: ", that.state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.On).setValue(that.state, null, "statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
 			}
 		});
-// Audio-Input Pollling
+// Audio-Input Polling
 		var i_statusemitter = pollingtoevent(function(done) {
 			that.log.debug("start INPUT polling..");
 			that.getInputSource( function( error, response) {
@@ -130,11 +144,11 @@ function HttpStatusAccessory(log, config)
 		i_statusemitter.on("i_statuspoll", function(data) {
 			that.i_state = data;
 			that.log.debug("event - INPUT status poller - new i_state: ", that.i_state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.ActiveIdentifier).setValue(that.i_state, null, "i_statuspoll");
 			}
 		});
-// Audio-Muting Pollling
+// Audio-Muting Polling
 		var m_statusemitter = pollingtoevent(function(done) {
 			that.log.debug("start MUTE polling..");
 			that.getMuteState( function( error, response) {
@@ -146,11 +160,11 @@ function HttpStatusAccessory(log, config)
 		m_statusemitter.on("m_statuspoll", function(data) {
 			that.m_state = data;
 			that.log.debug("event - MUTE status poller - new m_state: ", that.m_state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
 			}
 		});
-// Volume Pollling
+// Volume Polling
 		var v_statusemitter = pollingtoevent(function(done) {
 			that.log.debug("start VOLUME polling..");
 			that.getVolumeState( function( error, response) {
@@ -162,48 +176,48 @@ function HttpStatusAccessory(log, config)
 		v_statusemitter.on("v_statuspoll", function(data) {
 			that.v_state = data;
 			that.log.debug("event - VOLUME status poller - new v_state: ", that.v_state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
 			}
 		});
 	}
 }
 
-HttpStatusAccessory.prototype = {
+OnkyoPlatform.prototype = {
 
 eventDebug: function( response)
 {
-	//this.log.debug( "eventDebug: %s", response);
+	//this.log.info( "eventDebug: %s", response);
 },
 
 eventError: function( response)
 {
-	this.log.debug( "eventError: %s", response);
+	this.log.info( "eventError: %s", response);
 },
 
 eventConnect: function( response)
 {
-	this.log.debug( "eventConnect: %s", response);
+	this.log.info( "eventConnect: %s", response);
 },
 
 eventSystemPower: function( response)
 {
-	//this.log.debug( "eventSystemPower: %s", response);
+	//this.log.info( "eventSystemPower: %s", response);
 	this.state = (response == "on");
-	this.log.debug("eventSystemPower - message: %s, new state %s", response, this.state);
+	this.log.info("eventSystemPower - message: %s, new state %s", response, this.state);
 	//Communicate status
-	if (this.switchService ) {
-		this.switchService.getCharacteristic(Characteristic.On).setValue(this.state, null, "statuspoll");
+	if (this.tvService ) {
+		this.tvService.getCharacteristic(Characteristic.Active).setValue(this.state, null, "statuspoll");
 	}
 },
 
 eventAudioMuting: function( response)
 {
 	this.m_state = (response == "on");
-	this.log.debug("eventAudioMuting - message: %s, new m_state %s", response, this.m_state);
+	this.log.info("eventAudioMuting - message: %s, new m_state %s", response, this.m_state);
 	//Communicate status
-	if (this.switchService ) {
-		this.switchService.getCharacteristic(Characteristic.Mute).setValue(this.m_state, null, "m_statuspoll");
+	if (this.tvService ) {
+		this.tvService.getCharacteristic(Characteristic.Mute).setValue(this.m_state, null, "m_statuspoll");
 	}
 },
 
@@ -222,20 +236,20 @@ eventInput: function( response)
 				break;
 			}
 		}
-		this.log.debug("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
+		this.log.info("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
 
 		//Communicate status
-		if (this.switchService ) {
-			this.switchService.setCharacteristic(RxTypes.InputLabel,input);
-			this.switchService.getCharacteristic(RxTypes.InputSource).setValue(this.i_state, null, "i_statuspoll");
+		if (this.tvService ) {
+			this.tvService.setCharacteristic(RxTypes.InputLabel,input);
+			this.tvService.getCharacteristic(RxTypes.InputSource).setValue(this.i_state, null, "i_statuspoll");
 		}
 	} else {
 		// Then invalid Input chosen
-		this.log.debug("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
+		this.log.info("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
 
 		//Update input label status
-		if (this.switchService ) {
-			this.switchService.setCharacteristic(RxTypes.InputLabel,"INVALID");
+		if (this.tvService ) {
+			this.tvService.setCharacteristic(RxTypes.InputLabel,"INVALID");
 		}
 	}
 },
@@ -246,32 +260,32 @@ eventVolume: function( response)
         var volumeMultiplier = this.maxVolume/100;
         var newVolume = response / volumeMultiplier;
 		this.v_state = round(newVolume);
-		this.log.debug("eventVolume - message: %s, new v_state %s PERCENT", response, this.v_state);
+		this.log.info("eventVolume - message: %s, new v_state %s PERCENT", response, this.v_state);
 	} else {
 		this.v_state = response;
-		this.log.debug("eventVolume - message: %s, new v_state %s ACTUAL", response, this.v_state);
+		this.log.info("eventVolume - message: %s, new v_state %s ACTUAL", response, this.v_state);
 	}
 	//Communicate status
-	if (this.switchService ) {
-		this.switchService.getCharacteristic(Characteristic.Volume).setValue(this.v_state, null, "v_statuspoll");
+	if (this.tvService ) {
+		this.tvService.getCharacteristic(Characteristic.Volume).setValue(this.v_state, null, "v_statuspoll");
 	}
 },
 
 eventClose: function( response)
 {
-	this.log.debug( "eventClose: %s", response);
+	this.log.info( "eventClose: %s", response);
 },
 
 setPowerState: function(powerOn, callback, context) {
 	var that = this;
 //if context is statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "statuspoll") {
-		this.log.debug( "setPowerState - polling mode, ignore, state: %s", this.state);
+		this.log.info( "setPowerState - polling mode, ignore, state: %s", this.state);
 		callback(null, this.state);
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -283,18 +297,18 @@ setPowerState: function(powerOn, callback, context) {
 	that.state = powerOn;
 	callback( null, that.state);
     if (powerOn) {
-		this.log.debug("setPowerState - actual mode, power state: %s, switching to ON", that.state);
+		this.log.info("setPowerState - actual mode, power state: %s, switching to ON", that.state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=on", function(error, response) {
 			//that.log.debug( "PWR ON: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
 				that.state = false;
 				that.log.debug( "setPowerState - PWR ON: ERROR - current state: %s", that.state);
-				if (that.switchService ) {
-					that.switchService.getCharacteristic(Characteristic.On).setValue(powerOn, null, "statuspoll");
+				if (that.tvService ) {
+					that.tvService.getCharacteristic(Characteristic.Active).setValue(powerOn, null, "statuspoll");
 				}
 			} else {
 				// If the AVR has just been turned on, apply the default volume
-					this.log.debug("Attempting to set the default volume to "+this.defaultVolume);
+					this.log.info("Attempting to set the default volume to "+this.defaultVolume);
 					if (powerOn && this.defaultVolume) {
 						that.log.debug("Setting default volume to "+this.defaultVolume);
 						this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":"+this.defaultVolume, function(error, response) {
@@ -304,7 +318,7 @@ setPowerState: function(powerOn, callback, context) {
 						});
 					}
 				// If the AVR has just been turned on, apply the Input default
-					this.log.debug("Attempting to set the default input selector to "+this.defaultInput);
+					this.log.info("Attempting to set the default input selector to "+this.defaultInput);
 					if (powerOn && this.defaultInput) {
 						that.log.debug("Setting default input selector to "+this.defaultInput);
 						this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "="+this.defaultInput, function(error, response) {
@@ -316,14 +330,14 @@ setPowerState: function(powerOn, callback, context) {
 			}
 		}.bind(this) );
 	} else {
-		this.log.debug("setPowerState - actual mode, power state: %s, switching to OFF", that.state);
+		this.log.info("setPowerState - actual mode, power state: %s, switching to OFF", that.state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=standby", function(error, response) {
 			//that.log.debug( "PWR OFF: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
 				that.state = false;
 				that.log.debug( "setPowerState - PWR OFF: ERROR - current state: %s", that.state);
-				if (that.switchService ) {
-					that.switchService.getCharacteristic(Characteristic.On).setValue(that.state, null, "statuspoll");
+				if (that.tvService ) {
+					that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
 				}
 			}
 		}.bind(this) );
@@ -335,14 +349,14 @@ getPowerState: function(callback, context) {
 	//if context is statuspoll, then we need to request the actual value
 	if (!context || context != "statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.debug("getPowerState - polling mode, return state: ", this.state);
+			this.log.info("getPowerState - polling mode, return state: ", this.state);
 			callback(null, this.state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -350,13 +364,13 @@ getPowerState: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.state);
-    this.log.debug("getPowerState - actual mode, return state: ", this.state);
+    this.log.info("getPowerState - actual mode, return state: ", this.state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=query", function( error, data) {
 		if (error) {
 			that.state = false;
 			that.log.debug( "getPowerState - PWR QRY: ERROR - current state: %s", that.state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.On).setValue(that.state, null, "statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -367,14 +381,14 @@ getVolumeState: function(callback, context) {
 	//if context is v_statuspoll, then we need to request the actual value
 	if (!context || context != "v_statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.debug("getVolumeState - polling mode, return v_state: ", this.v_state);
+			this.log.info("getVolumeState - polling mode, return v_state: ", this.v_state);
 			callback(null, this.v_state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -382,13 +396,13 @@ getVolumeState: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.v_state);
-    this.log.debug("getVolumeState - actual mode, return v_state: ", this.v_state);
+    this.log.info("getVolumeState - actual mode, return v_state: ", this.v_state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + "=query", function( error, data) {
 		if (error) {
 			that.v_state = 0;
 			that.log.debug( "getVolumeState - VOLUME QRY: ERROR - current v_state: %s", that.v_state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -441,19 +455,57 @@ setVolumeState: function(volumeLvl, callback, context) {
 	}.bind(this) );
 },
 
+setVolumeRelative: function(volumeDirection, callback, context) {
+	var that = this;
+//if context is v_statuspoll, then we need to ensure that we do not set the actual value
+	if (context && context == "v_statuspoll") {
+		this.log.info( "setVolumeRelative - polling mode, ignore, v_state: %s", this.v_state);
+		callback(null, this.v_state);
+	    return;
+	}
+    if (!this.ip_address) {
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
+	    callback(new Error("No ip_address defined."));
+	    return;
+    }
+
+	this.setAttempt = this.setAttempt+1;
+
+	//do the callback immediately, to free homekit
+	//have the event later on execute changes
+	callback( null, that.v_state);
+	if (volumeDirection == Characteristic.VolumeSelector.INCREMENT) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + "level-up", function(error, response) {
+			if (error) {
+				that.v_state = 0;
+				that.log.debug( "setVolumeRelative - VOLUME : ERROR - current v_state: %s", that.v_state);
+			}
+		}.bind(this) );
+	} else if (volumeDirection == Characteristic.VolumeSelector.DECREMENT) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + "level-down", function(error, response) {
+			if (error) {
+				that.v_state = 0;
+				that.log.debug( "setVolumeRelative - VOLUME : ERROR - current v_state: %s", that.v_state);
+			}
+		}.bind(this) );
+	} else {
+		that.log.debug( "setVolumeRelative - VOLUME : ERROR - unknown direction sent");
+	}
+},
+
 getMuteState: function(callback, context) {
 	var that = this;
 	//if context is m_statuspoll, then we need to request the actual value
 	if (!context || context != "m_statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.debug("getMuteState - polling mode, return m_state: ", this.m_state);
+			this.log.info("getMuteState - polling mode, return m_state: ", this.m_state);
 			callback(null, this.m_state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -461,13 +513,13 @@ getMuteState: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.m_state);
-    this.log.debug("getMuteState - actual mode, return m_state: ", this.m_state);
+    this.log.info("getMuteState - actual mode, return m_state: ", this.m_state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=query", function( error, data) {
 		if (error) {
 			that.m_state = false;
 			that.log.debug( "getMuteState - MUTE QRY: ERROR - current m_state: %s", that.m_state);
-			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+			if (that.tvService ) {
+				that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -477,12 +529,12 @@ setMuteState: function(muteOn, callback, context) {
 	var that = this;
 //if context is m_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "m_statuspoll") {
-		this.log.debug( "setMuteState - polling mode, ignore, m_state: %s", this.m_state);
+		this.log.info( "setMuteState - polling mode, ignore, m_state: %s", this.m_state);
 		callback(null, this.m_state);
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -494,24 +546,24 @@ setMuteState: function(muteOn, callback, context) {
 	that.m_state = muteOn;
 	callback( null, that.m_state);
     if (that.m_state) {
-		this.log.debug("setMuteState - actual mode, mute m_state: %s, switching to ON", that.m_state);
+		this.log.info("setMuteState - actual mode, mute m_state: %s, switching to ON", that.m_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=on", function(error, response) {
 			if (error) {
 				that.m_state = false;
 				that.log.debug( "setMuteState - MUTE ON: ERROR - current m_state: %s", that.m_state);
-				if (that.switchService ) {
-					that.switchService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+				if (that.tvService ) {
+					that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
 				}
 			}
 		}.bind(this) );
 	} else {
-		this.log.debug("setMuteState - actual mode, mute m_state: %s, switching to OFF", that.m_state);
+		this.log.info("setMuteState - actual mode, mute m_state: %s, switching to OFF", that.m_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=off", function(error, response) {
 			if (error) {
 				that.m_state = false;
 				that.log.debug( "setMuteState - MUTE OFF: ERROR - current m_state: %s", that.m_state);
-				if (that.switchService ) {
-					that.switchService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+				if (that.tvService ) {
+					that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
 				}
 			}
 		}.bind(this) );
@@ -523,14 +575,14 @@ getInputSource: function(callback, context) {
 	//if context is i_statuspoll, then we need to request the actual value
 	if (!context || context != "i_statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.debug("getInputState - polling mode, return i_state: ", this.i_state);
+			this.log.info("getInputState - polling mode, return i_state: ", this.i_state);
 			callback(null, this.i_state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -538,14 +590,14 @@ getInputSource: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.i_state);
-    this.log.debug("getInputState - actual mode, return i_state: ", this.i_state);
+    this.log.info("getInputState - actual mode, return i_state: ", this.i_state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "=query", function( error, data) {
 		if (error) {
 			that.i_state = 1;
 			that.log.debug( "getInputState - INPUT QRY: ERROR - current i_state: %s", that.i_state);
-			if (that.switchService ) {
-				that.switchService.setCharacteristic(RxTypes.InputLabel,"get error")
-				that.switchService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
+			if (that.tvService ) {
+				that.tvService.setCharacteristic(RxTypes.InputLabel,"get error")
+				that.tvService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -555,19 +607,19 @@ setInputSource: function(source, callback, context) {
 	var that = this;
 //if context is i_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "i_statuspoll") {
-		this.log.debug( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
+		this.log.info( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
 		callback(null, this.i_state);
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.info.warn("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
 
 	this.setAttempt = this.setAttempt+1;
 	that.i_state = parseInt(source);
-	this.log.debug("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", that.i_state, RxInputs.Inputs[that.i_state].label);
+	this.log.info("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", that.i_state, RxInputs.Inputs[that.i_state].label);
 
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
@@ -576,17 +628,59 @@ setInputSource: function(source, callback, context) {
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + RxInputs.Inputs[that.i_state].label, function(error, response) {
 		if (error) {
 			that.log.debug( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", that.i_state, source.toString());
-			if (that.switchService ) {
-				that.switchService.setCharacteristic(RxTypes.InputLabel,"set error")
-				that.switchService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
+			if (that.tvService ) {
+				that.tvService.setCharacteristic(RxTypes.InputLabel,"set error")
+				that.tvService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
 			}
 		}
 	}.bind(this) );
 },
 
+remoteKeyPress: function(button, callback) {
+	//do the callback immediately, to free homekit
+	//have the event later on execute changes
+	callback(null, this.i_state);
+	this.log.info('Onkyo - remote button pressed: %d', button);
+	// this.log.info("remoteKeyPress - INPUT: pressing key %s", button);
+	if (this.buttons[button]) {
+		var press = this.buttons[button]
+		this.eiscp.command(this.zone + "." + "setup=" + press, function( error, data) {
+			if (error) {
+				that.i_state = 1;
+				that.log.info( "remoteKeyPress - INPUT: ERROR pressing button %s", press);
+			}
+		}.bind(this) );
+	} else {
+		this.log.error('Onkyo - remote button %d not supported.', button)
+	}
+},
+
 identify: function(callback) {
-    this.log.debug("Identify requested!");
+    this.log.info("Identify requested!");
     callback(); // success
+},
+
+
+addSources: function(service, inputs) {
+
+	inputs['Inputs'].forEach((i, x) =>  {
+		var id = x
+		var inputName = i['label']
+
+		let tmpInput = new Service.InputSource(inputName, 'inputSource' + x);
+		tmpInput
+			.setCharacteristic(Characteristic.Identifier, x)
+			.setCharacteristic(Characteristic.ConfiguredName, inputName)
+			.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+			.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION)
+			.setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+
+		service.addLinkedService(tmpInput);
+		this.enabledServices.push(tmpInput);
+		// this.inputAppIds.push(appId);
+	  
+	})
+
 },
 
 getServices: function() {
@@ -596,29 +690,78 @@ getServices: function() {
     informationService
     .setCharacteristic(Characteristic.Manufacturer, this.avrManufacturer)
     .setCharacteristic(Characteristic.Model, this.model)
-    .setCharacteristic(Characteristic.SerialNumber, this.avrSerial);
+	// .setCharacteristic(Characteristic.SerialNumber, this.avrSerial);
+	.setCharacteristic(Characteristic.SerialNumber, "ABC");
 
-	this.switchService = new Service.Switch(this.name);
+	this.enabledServices.push(informationService);
 
-	this.switchService
+	this.tvService = new Service.Television(this.name);
+
+	this.tvService
+		.setCharacteristic(Characteristic.ConfiguredName, this.name);
+	
+	this.tvService
+		.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+	
+	this.addSources(this.tvService, RxInputs)
+
+	this.tvService
+        .getCharacteristic(Characteristic.Active)
+        .on('get', this.getPowerState.bind(this))
+        .on('set', this.setPowerState.bind(this));
+
+	this.tvService
 		.getCharacteristic(Characteristic.On)
 		.on('get', this.getPowerState.bind(this))
 		.on('set', this.setPowerState.bind(this));
 
-	this.switchService.addCharacteristic(Characteristic.Volume)
-		.on('get', this.getVolumeState.bind(this))
+	this.tvService
+        .getCharacteristic(Characteristic.ActiveIdentifier)
+		.on('set', this.setInputSource.bind(this))
+		.on('get', this.getInputSource.bind(this));
+	
+	this.tvService
+        .getCharacteristic(Characteristic.RemoteKey)
+        .on('set', this.remoteKeyPress.bind(this));
+		
+	// this.tvService.addCharacteristic(Characteristic.Volume)
+	// 	.on('get', this.getVolumeState.bind(this))
+	// 	.on('set', this.setVolumeRelative.bind(this));
+
+	// this.tvService.addCharacteristic(Characteristic.Mute)
+	// 	.on('get', this.getMuteState.bind(this))
+	// 	.on('set', this.setMuteState.bind(this));
+
+	// this.tvService.addCharacteristic(RxTypes.InputSource)
+	// 	.on('get', this.getInputSource.bind(this))
+	// 	.on('set', this.setInputSource.bind(this));
+
+	// this.tvService.addCharacteristic(RxTypes.InputLabel);
+	this.enabledServices.push(this.tvService);
+	return this.enabledServices;
+}
+};
+
+
+OnkyoPlatform.prototype.prepareTvSpeakerService = function() {
+
+    this.tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume', 'tvSpeakerService');
+    this.tvSpeakerService
+        .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+        .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
+    this.tvSpeakerService
+        .getCharacteristic(Characteristic.VolumeSelector)
+        .on('set', this.setVolumeRelative.bind(this));
+    this.tvSpeakerService
+        .getCharacteristic(Characteristic.Mute)
+        .on('get', this.getMuteState.bind(this))
+        .on('set', this.setMuteState.bind(this));
+    this.tvSpeakerService
+        .addCharacteristic(Characteristic.Volume)
+        .on('get', this.getVolumeState.bind(this))
 		.on('set', this.setVolumeState.bind(this));
 
-	this.switchService.addCharacteristic(Characteristic.Mute)
-		.on('get', this.getMuteState.bind(this))
-		.on('set', this.setMuteState.bind(this));
+    this.tvService.addLinkedService(this.tvSpeakerService);
+    this.enabledServices.push(this.tvSpeakerService);
 
-	this.switchService.addCharacteristic(RxTypes.InputSource)
-		.on('get', this.getInputSource.bind(this))
-		.on('set', this.setInputSource.bind(this));
-
-	this.switchService.addCharacteristic(RxTypes.InputLabel);
-
-	return [informationService, this.switchService];
-}
 };
