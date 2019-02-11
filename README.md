@@ -41,7 +41,7 @@ Example accessory config (needs to be added to the homebridge config.json):
  ```
 "accessories": [
 	{
-		"accessory": "Onkyo",
+		"accessory": "Onkyo-tv",
 		"name": "Stereo",
 		"ip_address": "10.0.1.23",
 		"model" : "TX-NR609",
