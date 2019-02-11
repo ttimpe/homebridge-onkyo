@@ -11,6 +11,7 @@ Existing users of my original fork or gw-wiscon's be sure to update the "accesso
 
 # Changelog
 
+* Verison 0.7 changes accessory from a Switch to new TV accessory in iOS 12.2.
 * Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
 * Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
 * Version 0.4.x includes support for volume, mute, and has options for setting default_input.
@@ -49,7 +50,13 @@ Example accessory config (needs to be added to the homebridge config.json):
 		"default_volume": "10",
 		"max_volume": "35",
 		"map_volume_100": true,
-		"zone" : "zone2"
+		"zone" : "zone2",
+		"inputs": {
+				"dvd": "Blu-ray",
+				"video6": "Apple TV",
+				"video4": "AUX",
+				"cd": "TV/CD"
+			}
 	}
 ]
  ```
@@ -61,9 +68,10 @@ Field           			| Description
 **name**        			| (required) The name you want to use for control of the Onkyo accessories.
 **ip_address**  			| (required) The internal ip address of your Onkyo.
 **model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.json file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
-**poll_status_interval**  	| (Optional) Poll Status Interval. Defaults to 0 or no polling.
-**default_input**  			| (Optional) A valid source input. Default will use last known input. See output of 3.js in eiscp/examples for options.
+**poll_status_interval**  	| (optional) Poll Status Interval. Defaults to 0 or no polling.
+**default_input**  			| (optional) A valid source input. Default will use last known input. See output of 3.js in eiscp/examples for options.
 **default_volume**  		| (optional) Initial receiver volume upon powerup. This is the true volume number, not a percentage. Ignored if powerup from device knob or external app (like OnkyoRemote3).
 **max_volume**  			| (optional) Receiver volume max setting. This is a true volume number, not a percentage, and intended so there is not accidental setting of volume to 80. Ignored by external apps (like OnkyoRemote3). Defaults to 30.
 **map_volume_100**  		| (optional) Will remap the volume percentages that appear in the Home app so that the configured max_volume will appear as 100% in the Home app. For example, if the max_volume is 30, then setting the volume slider to 50% would set the receiver's actual volume to 15. Adjusting the stereo volume knob to 35 will appear as 100% in the Home app. This option could confuse some users to it defaults to off false, but it does give the user finer volume control especially when sliding volume up and down in the Home app. Defaults to False.
-**zone**              | (optional) Defaults to main. Optionally control zone2 where supported.
+**zone**              		| (optional) Defaults to main. Optionally control zone2 where supported.
+**inputs**					| (optional) List of inputs you want populated and what you want them to be labeled. Inputs not listed are omitted.

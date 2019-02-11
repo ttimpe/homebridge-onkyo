@@ -1,9 +1,7 @@
 var Service;
 var Characteristic;
 var RxTypes, RxInputs;
-var request = require("request");
 var pollingtoevent = require('polling-to-event');
-var util = require('util');
 var round = require( 'math-round' );
 
 module.exports = function(homebridge)
@@ -63,7 +61,7 @@ function OnkyoPlatform (log, config)
 	this.i_state = 1;
 	this.interval = parseInt( this.poll_status_interval);
 	this.avrManufacturer = "Onkyo";
-	this.avrSerial = "unknown";
+	this.avrSerial = this.ip_address;
 
 //	this.eiscp.discover(function(err,result){
 //		if(err) {
@@ -83,7 +81,7 @@ function OnkyoPlatform (log, config)
 	this.eiscp.on('debug', this.eventDebug.bind(this));
 	this.eiscp.on('error', this.eventError.bind(this));
 	this.eiscp.on('connect', this.eventConnect.bind(this));
-  this.eiscp.on('close', this.eventClose.bind(this));
+  	this.eiscp.on('close', this.eventClose.bind(this));
 	this.eiscp.on(this.cmdMap[this.zone]["power"], this.eventSystemPower.bind(this));
 	this.eiscp.on(this.cmdMap[this.zone]["volume"], this.eventVolume.bind(this));
 	this.eiscp.on(this.cmdMap[this.zone]["muting"], this.eventAudioMuting.bind(this));
@@ -109,8 +107,7 @@ function OnkyoPlatform (log, config)
 			newobj = newobj + '{ "code":"'+exkey+'" , "label":"'+hold+'" },';
 	}
 			newobj = newobj + '{ "code":"2B" , "label":"network" } ]}';
-	RxInputs = JSON.parse(newobj); // ******
-	console.log(RxInputs)
+	RxInputs = JSON.parse(newobj);
 
 // Status Polling
 	if (this.switchHandling == "poll") {
@@ -192,7 +189,7 @@ eventDebug: function( response)
 
 eventError: function( response)
 {
-	this.log.info( "eventError: %s", response);
+	this.log.error( "eventError: %s", response);
 },
 
 eventConnect: function( response)
@@ -214,7 +211,7 @@ eventSystemPower: function( response)
 eventAudioMuting: function( response)
 {
 	this.m_state = (response == "on");
-	this.log.info("eventAudioMuting - message: %s, new m_state %s", response, this.m_state);
+	this.log.debug("eventAudioMuting - message: %s, new m_state %s", response, this.m_state);
 	//Communicate status
 	if (this.tvService ) {
 		this.tvService.getCharacteristic(Characteristic.Mute).setValue(this.m_state, null, "m_statuspoll");
@@ -236,7 +233,7 @@ eventInput: function( response)
 				break;
 			}
 		}
-		this.log.info("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
+		this.log.debug("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
 
 		//Communicate status
 		if (this.tvService ) {
@@ -245,7 +242,7 @@ eventInput: function( response)
 		}
 	} else {
 		// Then invalid Input chosen
-		this.log.info("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
+		this.log.error("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
 
 		//Update input label status
 		if (this.tvService ) {
@@ -260,10 +257,10 @@ eventVolume: function( response)
         var volumeMultiplier = this.maxVolume/100;
         var newVolume = response / volumeMultiplier;
 		this.v_state = round(newVolume);
-		this.log.info("eventVolume - message: %s, new v_state %s PERCENT", response, this.v_state);
+		this.log.debug("eventVolume - message: %s, new v_state %s PERCENT", response, this.v_state);
 	} else {
 		this.v_state = response;
-		this.log.info("eventVolume - message: %s, new v_state %s ACTUAL", response, this.v_state);
+		this.log.debug("eventVolume - message: %s, new v_state %s ACTUAL", response, this.v_state);
 	}
 	//Communicate status
 	if (this.tvService ) {
@@ -273,7 +270,7 @@ eventVolume: function( response)
 
 eventClose: function( response)
 {
-	this.log.info( "eventClose: %s", response);
+	this.log.debug( "eventClose: %s", response);
 },
 
 setPowerState: function(powerOn, callback, context) {
@@ -285,7 +282,7 @@ setPowerState: function(powerOn, callback, context) {
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -302,28 +299,28 @@ setPowerState: function(powerOn, callback, context) {
 			//that.log.debug( "PWR ON: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
 				that.state = false;
-				that.log.debug( "setPowerState - PWR ON: ERROR - current state: %s", that.state);
+				that.log.error( "setPowerState - PWR ON: ERROR - current state: %s", that.state);
 				if (that.tvService ) {
 					that.tvService.getCharacteristic(Characteristic.Active).setValue(powerOn, null, "statuspoll");
 				}
 			} else {
 				// If the AVR has just been turned on, apply the default volume
-					this.log.info("Attempting to set the default volume to "+this.defaultVolume);
+					this.log.debug("Attempting to set the default volume to "+this.defaultVolume);
 					if (powerOn && this.defaultVolume) {
-						that.log.debug("Setting default volume to "+this.defaultVolume);
+						that.log.info("Setting default volume to "+this.defaultVolume);
 						this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":"+this.defaultVolume, function(error, response) {
 							if (error) {
-								that.log.debug( "Error while setting default volume: %s", error);
+								that.log.error( "Error while setting default volume: %s", error);
 							}
 						});
 					}
 				// If the AVR has just been turned on, apply the Input default
-					this.log.info("Attempting to set the default input selector to "+this.defaultInput);
+					this.log.debug("Attempting to set the default input selector to "+this.defaultInput);
 					if (powerOn && this.defaultInput) {
-						that.log.debug("Setting default input selector to "+this.defaultInput);
+						that.log.info("Setting default input selector to "+this.defaultInput);
 						this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "="+this.defaultInput, function(error, response) {
 							if (error) {
-								that.log.debug( "Error while setting default input: %s", error);
+								that.log.error( "Error while setting default input: %s", error);
 							}
 						});
 					}
@@ -335,7 +332,7 @@ setPowerState: function(powerOn, callback, context) {
 			//that.log.debug( "PWR OFF: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
 				that.state = false;
-				that.log.debug( "setPowerState - PWR OFF: ERROR - current state: %s", that.state);
+				that.log.error( "setPowerState - PWR OFF: ERROR - current state: %s", that.state);
 				if (that.tvService ) {
 					that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
 				}
@@ -349,14 +346,14 @@ getPowerState: function(callback, context) {
 	//if context is statuspoll, then we need to request the actual value
 	if (!context || context != "statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.info("getPowerState - polling mode, return state: ", this.state);
+			this.log.debug("getPowerState - polling mode, return state: ", this.state);
 			callback(null, this.state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -364,7 +361,7 @@ getPowerState: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.state);
-    this.log.info("getPowerState - actual mode, return state: ", this.state);
+    this.log.debug("getPowerState - actual mode, return state: ", this.state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=query", function( error, data) {
 		if (error) {
 			that.state = false;
@@ -381,14 +378,14 @@ getVolumeState: function(callback, context) {
 	//if context is v_statuspoll, then we need to request the actual value
 	if (!context || context != "v_statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.info("getVolumeState - polling mode, return v_state: ", this.v_state);
+			this.log.debug("getVolumeState - polling mode, return v_state: ", this.v_state);
 			callback(null, this.v_state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -396,7 +393,7 @@ getVolumeState: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.v_state);
-    this.log.info("getVolumeState - actual mode, return v_state: ", this.v_state);
+    this.log.debug("getVolumeState - actual mode, return v_state: ", this.v_state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + "=query", function( error, data) {
 		if (error) {
 			that.v_state = 0;
@@ -412,12 +409,12 @@ setVolumeState: function(volumeLvl, callback, context) {
 	var that = this;
 //if context is v_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "v_statuspoll") {
-		this.log.debug( "setVolumeState - polling mode, ignore, v_state: %s", this.v_state);
+		this.log.info( "setVolumeState - polling mode, ignore, v_state: %s", this.v_state);
 		callback(null, this.v_state);
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.debug.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -429,15 +426,15 @@ setVolumeState: function(volumeLvl, callback, context) {
         var volumeMultiplier = this.maxVolume/100;
         var newVolume = volumeMultiplier * volumeLvl;
 		this.v_state = round(newVolume);
-		this.log.debug("setVolumeState - actual mode, PERCENT, volume v_state: %s", that.v_state);
+		this.log.info("setVolumeState - actual mode, PERCENT, volume v_state: %s", that.v_state);
 	} else if (volumeLvl > this.maxVolume) {
 	//Determin if maxVolume threshold breached, if so set to max.
 		that.v_state = this.maxVolume;
-		this.log.debug("setVolumeState - VOLUME LEVEL of: %s exceeds maxVolume: %s. Resetting to max.", volumeLvl, this.maxVolume);
+		this.log.info("setVolumeState - VOLUME LEVEL of: %s exceeds maxVolume: %s. Resetting to max.", volumeLvl, this.maxVolume);
 	} else {
 	// Must be using actual volume number
 		that.v_state = volumeLvl;
-		this.log.debug("setVolumeState - actual mode, ACTUAL volume v_state: %s", that.v_state);
+		this.log.info("setVolumeState - actual mode, ACTUAL volume v_state: %s", that.v_state);
 	}
 
 	//do the callback immediately, to free homekit
@@ -464,7 +461,7 @@ setVolumeRelative: function(volumeDirection, callback, context) {
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -475,21 +472,23 @@ setVolumeRelative: function(volumeDirection, callback, context) {
 	//have the event later on execute changes
 	callback( null, that.v_state);
 	if (volumeDirection == Characteristic.VolumeSelector.INCREMENT) {
+		this.log.info("setVolumeRelative - VOLUME : level-up")
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + "level-up", function(error, response) {
 			if (error) {
 				that.v_state = 0;
-				that.log.debug( "setVolumeRelative - VOLUME : ERROR - current v_state: %s", that.v_state);
+				that.log.error( "setVolumeRelative - VOLUME : ERROR - current v_state: %s", that.v_state);
 			}
 		}.bind(this) );
 	} else if (volumeDirection == Characteristic.VolumeSelector.DECREMENT) {
+		this.log.info("setVolumeRelative - VOLUME : level-down")
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + "level-down", function(error, response) {
 			if (error) {
 				that.v_state = 0;
-				that.log.debug( "setVolumeRelative - VOLUME : ERROR - current v_state: %s", that.v_state);
+				that.log.error( "setVolumeRelative - VOLUME : ERROR - current v_state: %s", that.v_state);
 			}
 		}.bind(this) );
 	} else {
-		that.log.debug( "setVolumeRelative - VOLUME : ERROR - unknown direction sent");
+		that.log.error( "setVolumeRelative - VOLUME : ERROR - unknown direction sent");
 	}
 },
 
@@ -498,14 +497,14 @@ getMuteState: function(callback, context) {
 	//if context is m_statuspoll, then we need to request the actual value
 	if (!context || context != "m_statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.info("getMuteState - polling mode, return m_state: ", this.m_state);
+			this.log.debug("getMuteState - polling mode, return m_state: ", this.m_state);
 			callback(null, this.m_state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -513,7 +512,7 @@ getMuteState: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.m_state);
-    this.log.info("getMuteState - actual mode, return m_state: ", this.m_state);
+    this.log.debug("getMuteState - actual mode, return m_state: ", this.m_state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=query", function( error, data) {
 		if (error) {
 			that.m_state = false;
@@ -534,7 +533,7 @@ setMuteState: function(muteOn, callback, context) {
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -550,7 +549,7 @@ setMuteState: function(muteOn, callback, context) {
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=on", function(error, response) {
 			if (error) {
 				that.m_state = false;
-				that.log.debug( "setMuteState - MUTE ON: ERROR - current m_state: %s", that.m_state);
+				that.log.error( "setMuteState - MUTE ON: ERROR - current m_state: %s", that.m_state);
 				if (that.tvService ) {
 					that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
 				}
@@ -561,7 +560,7 @@ setMuteState: function(muteOn, callback, context) {
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=off", function(error, response) {
 			if (error) {
 				that.m_state = false;
-				that.log.debug( "setMuteState - MUTE OFF: ERROR - current m_state: %s", that.m_state);
+				that.log.error( "setMuteState - MUTE OFF: ERROR - current m_state: %s", that.m_state);
 				if (that.tvService ) {
 					that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
 				}
@@ -575,14 +574,14 @@ getInputSource: function(callback, context) {
 	//if context is i_statuspoll, then we need to request the actual value
 	if (!context || context != "i_statuspoll") {
 		if (this.switchHandling == "poll") {
-			this.log.info("getInputState - polling mode, return i_state: ", this.i_state);
+			this.log.debug("getInputState - polling mode, return i_state: ", this.i_state);
 			callback(null, this.i_state);
 			return;
 		}
 	}
 
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -590,7 +589,7 @@ getInputSource: function(callback, context) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.i_state);
-    this.log.info("getInputState - actual mode, return i_state: ", this.i_state);
+    this.log.debug("getInputState - actual mode, return i_state: ", this.i_state);
 	this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "=query", function( error, data) {
 		if (error) {
 			that.i_state = 1;
@@ -612,7 +611,7 @@ setInputSource: function(source, callback, context) {
 	    return;
 	}
     if (!this.ip_address) {
-    	this.log.info.warn("Ignoring request; No ip_address defined.");
+    	this.log.error("Ignoring request; No ip_address defined.");
 	    callback(new Error("No ip_address defined."));
 	    return;
     }
@@ -640,45 +639,55 @@ remoteKeyPress: function(button, callback) {
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
 	callback(null, this.i_state);
-	this.log.info('Onkyo - remote button pressed: %d', button);
-	// this.log.info("remoteKeyPress - INPUT: pressing key %s", button);
 	if (this.buttons[button]) {
 		var press = this.buttons[button]
+		this.log.info("remoteKeyPress - INPUT: pressing key %s", press);
 		this.eiscp.command(this.zone + "." + "setup=" + press, function( error, data) {
 			if (error) {
 				that.i_state = 1;
-				that.log.info( "remoteKeyPress - INPUT: ERROR pressing button %s", press);
+				that.log.error( "remoteKeyPress - INPUT: ERROR pressing button %s", press);
 			}
 		}.bind(this) );
 	} else {
-		this.log.error('Onkyo - remote button %d not supported.', button)
+		this.log.error('Remote button %d not supported.', button)
 	}
 },
 
 identify: function(callback) {
-    this.log.info("Identify requested!");
+    this.log.info("Identify requested! %i", this.ip_address);
     callback(); // success
 },
 
 
-addSources: function(service, inputs) {
+addSources: function(service) {
+	// If input name mappings are provided, use them.
+	// Else, load all inputs from query (useful for finding inputs to map).
+	RxInputs['Inputs'].forEach((i, x) =>  {
+		if (this.inputs) {
+			if (this.inputs[i['label']]) {
+				var inputName = this.inputs[i['label']]
+				let tmpInput = new Service.InputSource(inputName, 'inputSource' + x);
+				tmpInput
+					.setCharacteristic(Characteristic.Identifier, x)
+					.setCharacteristic(Characteristic.ConfiguredName, inputName)
+					.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+					.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
+		
+				service.addLinkedService(tmpInput);
+				this.enabledServices.push(tmpInput);
+			}
+		} else {
+			var inputName = i['label']
+			let tmpInput = new Service.InputSource(inputName, 'inputSource' + x);
+			tmpInput
+				.setCharacteristic(Characteristic.Identifier, x)
+				.setCharacteristic(Characteristic.ConfiguredName, inputName)
+				.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
 
-	inputs['Inputs'].forEach((i, x) =>  {
-		var id = x
-		var inputName = i['label']
-
-		let tmpInput = new Service.InputSource(inputName, 'inputSource' + x);
-		tmpInput
-			.setCharacteristic(Characteristic.Identifier, x)
-			.setCharacteristic(Characteristic.ConfiguredName, inputName)
-			.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-			.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION)
-			.setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
-
-		service.addLinkedService(tmpInput);
-		this.enabledServices.push(tmpInput);
-		// this.inputAppIds.push(appId);
-	  
+			service.addLinkedService(tmpInput);
+			this.enabledServices.push(tmpInput);
+		}
 	})
 
 },
@@ -690,8 +699,7 @@ getServices: function() {
     informationService
     .setCharacteristic(Characteristic.Manufacturer, this.avrManufacturer)
     .setCharacteristic(Characteristic.Model, this.model)
-	// .setCharacteristic(Characteristic.SerialNumber, this.avrSerial);
-	.setCharacteristic(Characteristic.SerialNumber, "ABC");
+	.setCharacteristic(Characteristic.SerialNumber, this.avrSerial);
 
 	this.enabledServices.push(informationService);
 
@@ -703,7 +711,7 @@ getServices: function() {
 	this.tvService
 		.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 	
-	this.addSources(this.tvService, RxInputs)
+	this.addSources(this.tvService)
 
 	this.tvService
         .getCharacteristic(Characteristic.Active)
@@ -724,20 +732,8 @@ getServices: function() {
         .getCharacteristic(Characteristic.RemoteKey)
         .on('set', this.remoteKeyPress.bind(this));
 		
-	// this.tvService.addCharacteristic(Characteristic.Volume)
-	// 	.on('get', this.getVolumeState.bind(this))
-	// 	.on('set', this.setVolumeRelative.bind(this));
-
-	// this.tvService.addCharacteristic(Characteristic.Mute)
-	// 	.on('get', this.getMuteState.bind(this))
-	// 	.on('set', this.setMuteState.bind(this));
-
-	// this.tvService.addCharacteristic(RxTypes.InputSource)
-	// 	.on('get', this.getInputSource.bind(this))
-	// 	.on('set', this.setInputSource.bind(this));
-
-	// this.tvService.addCharacteristic(RxTypes.InputLabel);
 	this.enabledServices.push(this.tvService);
+	this.prepareTvSpeakerService();
 	return this.enabledServices;
 }
 };
