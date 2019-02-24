@@ -7,11 +7,11 @@ Should work for all supported models as listed in the node_modules/eiscp/eiscp-c
 # Description
 
 This is an enhanced fork from the original/unmaintained homebridge-onkyo-avr plugin written by gw-wiscon.
-Existing users of my original fork or gw-wiscon's be sure to update the "accessory" config to "Onkyo".
+Existing users of my original fork or gw-wiscon's be sure to update the "platform" config to "Onkyo".
 
 # Changelog
 
-* Verison 0.7 changes accessory from a Switch to new TV accessory in iOS 12.2.
+* Verison 0.7 converts from Accessory to Platform, in theory allowing control of multiple receivers. Refer to the sample config section for a usage example. By default changes accessory from a Switch to new TV accessory in iOS 12.2. To use the legacy Switch service (i.e. if you haven't upgraded to 12.2 yet), add `"switch_service": true` to your receiver in config. Adds optional Dimmer service for separate volume control. To use, add `"volume_dimmer": true` to your receiver in config.
 * Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
 * Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
 * Version 0.4.x includes support for volume, mute, and has options for setting default_input.
@@ -22,7 +22,7 @@ For Alexa Control of Volume, Mute, Input - (if using the Alexa plugin) - create 
 
 # To Do
 
-Complete re-write to convert to a Platform. This will allow for auto discovery of all receivers (if more than one exist), and other flexibility.
+~Complete re-write to convert to a Platform.~ This will allow for auto discovery of all receivers (if more than one exist), and other flexibility.
 Adding Speaker A/B on/off control
 Others...
 
@@ -37,35 +37,41 @@ For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples dir
 
 # Configuration
 
-Example accessory config (needs to be added to the homebridge config.json):
+Example platform config (needs to be added to the homebridge config.json):
  ```
-"accessories": [
-	{
-		"accessory": "Onkyo",
-		"name": "Stereo",
-		"ip_address": "10.0.1.23",
-		"model" : "TX-NR609",
-		"poll_status_interval": "900",
-		"default_input": "net",
-		"default_volume": "10",
-		"max_volume": "35",
-		"map_volume_100": true,
-		"zone" : "zone2",
-		"inputs": {
-				"dvd": "Blu-ray",
-				"video6": "Apple TV",
-				"video4": "AUX",
-				"cd": "TV/CD"
-			}
-	}
-]
+"platforms": [{
+        "platform": "Onkyo",
+        "name": "Onkyo",
+        "receivers": [
+            {
+                "model": "TX-NR609",
+                "ip_address": "10.0.1.6",
+                "poll_status_interval": "3000",
+                "max_volume": "55",
+                "map_volume_100": true,
+                "name": "Receiver",
+                "inputs": {
+                    "dvd": "Blu-ray",
+                    "video2": "Switch",
+                    "video3": "Xbox",
+                    "video6": "Apple TV",
+                    "video4": "AUX",
+                    "cd": "TV/CD"
+                },
+                "volume_dimmer": false,
+				"switch_service": false
+            }
+        ]
+    }]
  ```
 ### Config Explanation:
 
 Field           			| Description
 ----------------------------|------------
-**accessory**   			| (required) Must always be "Onkyo".
-**name**        			| (required) The name you want to use for control of the Onkyo accessories.
+**platform**   			| (required) Must always be "Onkyo".
+**name**        			| (required) Must always be "Onkyo".
+**receivers**				| (requierd) A list of receivers to control.
+**name**					| (required) The name you want to use for control of the Onkyo accessories.
 **ip_address**  			| (required) The internal ip address of your Onkyo.
 **model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.json file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
 **poll_status_interval**  	| (optional) Poll Status Interval. Defaults to 0 or no polling.
@@ -74,4 +80,6 @@ Field           			| Description
 **max_volume**  			| (optional) Receiver volume max setting. This is a true volume number, not a percentage, and intended so there is not accidental setting of volume to 80. Ignored by external apps (like OnkyoRemote3). Defaults to 30.
 **map_volume_100**  		| (optional) Will remap the volume percentages that appear in the Home app so that the configured max_volume will appear as 100% in the Home app. For example, if the max_volume is 30, then setting the volume slider to 50% would set the receiver's actual volume to 15. Adjusting the stereo volume knob to 35 will appear as 100% in the Home app. This option could confuse some users to it defaults to off false, but it does give the user finer volume control especially when sliding volume up and down in the Home app. Defaults to False.
 **zone**              		| (optional) Defaults to main. Optionally control zone2 where supported.
-**inputs**					| (optional) List of inputs you want populated and what you want them to be labeled. Inputs not listed are omitted.
+**inputs**					| (optional) List of inputs you want populated for the TV service and what you want them to be labeled. Inputs not listed are omitted.
+**volume_dimmer**					| (optional) Boolean value. Setting this to `true` enables additional Dimmer accessory for separate volume control.
+**switch_service**					| (optional) Boolean value. Setting this to `true` enables uses legacy Switch service instead of the new TV service.
