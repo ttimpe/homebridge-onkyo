@@ -59,6 +59,7 @@ function OnkyoAccessory (platform, receiver)
 	this.model = config["model"];
 	this.zone = config["zone"] || "main";
 	this.inputs = config["inputs"];
+	this.volume_dimmer = config["volume_dimmer"];
 
 	// var uuid = UUIDGen.generate(this.name);
 	// this.accessory = new Accessory(this.name, uuid);
@@ -773,6 +774,9 @@ getServices: function() {
 		
 	this.enabledServices.push(this.tvService);
 	this.prepareTvSpeakerService();
+	if (this.volume_dimmer) {
+		this.prepareVolumeDimmer();
+	}
 	return this.enabledServices;
 }
 };
@@ -800,3 +804,33 @@ OnkyoAccessory.prototype.prepareTvSpeakerService = function() {
     this.enabledServices.push(this.tvSpeakerService);
 
 };
+
+OnkyoAccessory.prototype.prepareVolumeDimmer = function() {
+	this.dimmer = new Service.Lightbulb(this.name + ' Volume', 'dimmer');
+	this.dimmer
+		.getCharacteristic(Characteristic.On)
+		// Inverted logic taken from https://github.com/langovoi/homebridge-upnp
+		.on('get', (callback) => {
+			this.getMuteState((err, value) => {
+				if (err) {
+					callback(err);
+					return;
+				}
+
+				callback(null, !value);
+			})
+		})
+		.on('set', (value, callback) => this.setMuteState(!value, callback));
+	this.dimmer
+		.addCharacteristic(Characteristic.Brightness)
+		.on('get', this.getVolumeState.bind(this))
+		.on('set', this.setVolumeState.bind(this));
+	if (this.tvService) {
+		this.tvService.addLinkedService(this.dimmer);
+	}
+	if (this.switchService) {
+		this.switchService.addLinkedService(this.dimmer);
+	}
+	this.enabledServices.push(this.dimmer);
+
+}
