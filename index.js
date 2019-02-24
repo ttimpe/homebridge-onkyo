@@ -27,9 +27,8 @@ function OnkyoPlatform (log, config, api) {
 
 OnkyoPlatform.prototype.accessories = function(callback) {
 	var self = this;
-	this.log.info("Config: %s", this.config);
 	this.numberReceivers = this.receivers.length;
-	this.log.info("Creating %s receivers...", this.numberReceivers);
+	this.log.debug("Creating %s receivers...", this.numberReceivers);
 
 	this.receivers.forEach(function(receiver) {
 		var accessory = new OnkyoAccessory(self, receiver);
@@ -39,9 +38,6 @@ OnkyoPlatform.prototype.accessories = function(callback) {
 	callback(accessories);
 }
 
-// function OnkyoAccessory (platform, receiver) {
-// 	this.init.call(this, platform, receiver)
-// }
 
 function OnkyoAccessory (platform, receiver)
 {	
@@ -54,7 +50,6 @@ function OnkyoAccessory (platform, receiver)
 	this.enabledServices = [];
 
 	config = receiver;
-	this.log.info("Receiver: %j", config);
 	this.name = config["name"];
 	this.ip_address	= config["ip_address"];
 	this.model = config["model"];
@@ -63,8 +58,6 @@ function OnkyoAccessory (platform, receiver)
 	this.volume_dimmer = config["volume_dimmer"] || false;
 	this.switch_service = config["switch_service"] || false;
 
-	// var uuid = UUIDGen.generate(this.name);
-	// this.accessory = new Accessory(this.name, uuid);
 
 	this.cmdMap = new Array();
 	this.cmdMap["main"] = new Array();
@@ -103,15 +96,15 @@ function OnkyoAccessory (platform, receiver)
 	this.avrManufacturer = "Onkyo";
 	this.avrSerial = this.ip_address;
 
-//	this.eiscp.discover(function(err,result){
-//		if(err) {
-//			that.log.debug("Onkyo - ERROR - No RX found. Result: %s", result);
-//        } else {
-//			that.log.debug("Onkyo - Found these receivers on the local network. Connecting to first...");
-//			that.log.debug(result);
-//			that.avrSerial = result[0].mac;
-//        }
-//	});
+	// this.eiscp.discover(function(err,result){
+	// 	if(err) {
+	// 		that.log.debug("Onkyo - ERROR - No RX found. Result: %s", result);
+    //    } else {
+	// 		that.log.debug("Onkyo - Found these receivers on the local network. Connecting to first...");
+	// 		that.log.debug(result);
+	// 		that.avrSerial = result[0].mac;
+    //    }
+	// });
 
 	this.switchHandling = "check";
 	if (this.interval > 10 && this.interval < 100000) {
@@ -224,7 +217,7 @@ OnkyoAccessory.prototype = {
 
 eventDebug: function( response)
 {
-	//this.log.info( "eventDebug: %s", response);
+	this.log.debug( "eventDebug: %s", response);
 },
 
 eventError: function( response)
@@ -234,15 +227,14 @@ eventError: function( response)
 
 eventConnect: function( response)
 {
-	this.log.info( "eventConnect: %s", response);
+	this.log.debug( "eventConnect: %s", response);
 	this.reachable = true;
 },
 
 eventSystemPower: function( response)
 {
-	//this.log.info( "eventSystemPower: %s", response);
 	this.state = (response == "on");
-	this.log.info("eventSystemPower - message: %s, new state %s", response, this.state);
+	this.log.debug("eventSystemPower - message: %s, new state %s", response, this.state);
 	//Communicate status
 	if (this.tvService ) {
 		this.tvService.getCharacteristic(Characteristic.Active).setValue(this.state, null, "statuspoll");
@@ -319,7 +311,7 @@ setPowerState: function(powerOn, callback, context) {
 	var that = this;
 //if context is statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "statuspoll") {
-		this.log.info( "setPowerState - polling mode, ignore, state: %s", this.state);
+		this.log.debug( "setPowerState - polling mode, ignore, state: %s", this.state);
 		callback(null, this.state);
 	    return;
 	}
@@ -336,7 +328,7 @@ setPowerState: function(powerOn, callback, context) {
 	that.state = powerOn;
 	callback( null, that.state);
     if (powerOn) {
-		this.log.info("setPowerState - actual mode, power state: %s, switching to ON", that.state);
+		this.log.debug("setPowerState - actual mode, power state: %s, switching to ON", that.state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=on", function(error, response) {
 			//that.log.debug( "PWR ON: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
@@ -369,7 +361,7 @@ setPowerState: function(powerOn, callback, context) {
 			}
 		}.bind(this) );
 	} else {
-		this.log.info("setPowerState - actual mode, power state: %s, switching to OFF", that.state);
+		this.log.debug("setPowerState - actual mode, power state: %s, switching to OFF", that.state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["power"] + "=standby", function(error, response) {
 			//that.log.debug( "PWR OFF: %s - %s -- current state: %s", error, response, that.state);
 			if (error) {
@@ -451,7 +443,7 @@ setVolumeState: function(volumeLvl, callback, context) {
 	var that = this;
 //if context is v_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "v_statuspoll") {
-		this.log.info( "setVolumeState - polling mode, ignore, v_state: %s", this.v_state);
+		this.log.debug( "setVolumeState - polling mode, ignore, v_state: %s", this.v_state);
 		callback(null, this.v_state);
 	    return;
 	}
@@ -468,15 +460,15 @@ setVolumeState: function(volumeLvl, callback, context) {
         var volumeMultiplier = this.maxVolume/100;
         var newVolume = volumeMultiplier * volumeLvl;
 		this.v_state = round(newVolume);
-		this.log.info("setVolumeState - actual mode, PERCENT, volume v_state: %s", that.v_state);
+		this.log.debug("setVolumeState - actual mode, PERCENT, volume v_state: %s", that.v_state);
 	} else if (volumeLvl > this.maxVolume) {
 	//Determin if maxVolume threshold breached, if so set to max.
 		that.v_state = this.maxVolume;
-		this.log.info("setVolumeState - VOLUME LEVEL of: %s exceeds maxVolume: %s. Resetting to max.", volumeLvl, this.maxVolume);
+		this.log.debug("setVolumeState - VOLUME LEVEL of: %s exceeds maxVolume: %s. Resetting to max.", volumeLvl, this.maxVolume);
 	} else {
 	// Must be using actual volume number
 		that.v_state = volumeLvl;
-		this.log.info("setVolumeState - actual mode, ACTUAL volume v_state: %s", that.v_state);
+		this.log.debug("setVolumeState - actual mode, ACTUAL volume v_state: %s", that.v_state);
 	}
 
 	//do the callback immediately, to free homekit
@@ -498,7 +490,7 @@ setVolumeRelative: function(volumeDirection, callback, context) {
 	var that = this;
 //if context is v_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "v_statuspoll") {
-		this.log.info( "setVolumeRelative - polling mode, ignore, v_state: %s", this.v_state);
+		this.log.debug( "setVolumeRelative - polling mode, ignore, v_state: %s", this.v_state);
 		callback(null, this.v_state);
 	    return;
 	}
@@ -514,7 +506,7 @@ setVolumeRelative: function(volumeDirection, callback, context) {
 	//have the event later on execute changes
 	callback( null, that.v_state);
 	if (volumeDirection == Characteristic.VolumeSelector.INCREMENT) {
-		this.log.info("setVolumeRelative - VOLUME : level-up")
+		this.log.debug("setVolumeRelative - VOLUME : level-up")
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + "level-up", function(error, response) {
 			if (error) {
 				that.v_state = 0;
@@ -522,7 +514,7 @@ setVolumeRelative: function(volumeDirection, callback, context) {
 			}
 		}.bind(this) );
 	} else if (volumeDirection == Characteristic.VolumeSelector.DECREMENT) {
-		this.log.info("setVolumeRelative - VOLUME : level-down")
+		this.log.debug("setVolumeRelative - VOLUME : level-down")
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["volume"] + ":" + "level-down", function(error, response) {
 			if (error) {
 				that.v_state = 0;
@@ -570,7 +562,7 @@ setMuteState: function(muteOn, callback, context) {
 	var that = this;
 //if context is m_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "m_statuspoll") {
-		this.log.info( "setMuteState - polling mode, ignore, m_state: %s", this.m_state);
+		this.log.debug( "setMuteState - polling mode, ignore, m_state: %s", this.m_state);
 		callback(null, this.m_state);
 	    return;
 	}
@@ -587,7 +579,7 @@ setMuteState: function(muteOn, callback, context) {
 	that.m_state = muteOn;
 	callback( null, that.m_state);
     if (that.m_state) {
-		this.log.info("setMuteState - actual mode, mute m_state: %s, switching to ON", that.m_state);
+		this.log.debug("setMuteState - actual mode, mute m_state: %s, switching to ON", that.m_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=on", function(error, response) {
 			if (error) {
 				that.m_state = false;
@@ -598,7 +590,7 @@ setMuteState: function(muteOn, callback, context) {
 			}
 		}.bind(this) );
 	} else {
-		this.log.info("setMuteState - actual mode, mute m_state: %s, switching to OFF", that.m_state);
+		this.log.debug("setMuteState - actual mode, mute m_state: %s, switching to OFF", that.m_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["muting"] + "=off", function(error, response) {
 			if (error) {
 				that.m_state = false;
@@ -648,7 +640,7 @@ setInputSource: function(source, callback, context) {
 	var that = this;
 //if context is i_statuspoll, then we need to ensure that we do not set the actual value
 	if (context && context == "i_statuspoll") {
-		this.log.info( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
+		this.log.debug( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
 		callback(null, this.i_state);
 	    return;
 	}
@@ -660,7 +652,7 @@ setInputSource: function(source, callback, context) {
 
 	this.setAttempt = this.setAttempt+1;
 	that.i_state = parseInt(source);
-	this.log.info("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", that.i_state, RxInputs.Inputs[that.i_state].label);
+	this.log.debug("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", that.i_state, RxInputs.Inputs[that.i_state].label);
 
 	//do the callback immediately, to free homekit
 	//have the event later on execute changes
@@ -683,7 +675,7 @@ remoteKeyPress: function(button, callback) {
 	callback(null, this.i_state);
 	if (this.buttons[button]) {
 		var press = this.buttons[button]
-		this.log.info("remoteKeyPress - INPUT: pressing key %s", press);
+		this.log.debug("remoteKeyPress - INPUT: pressing key %s", press);
 		this.eiscp.command(this.zone + "." + "setup=" + press, function( error, data) {
 			if (error) {
 				that.i_state = 1;
@@ -747,6 +739,7 @@ getServices: function() {
 	this.enabledServices.push(informationService);
 
 	if (this.switch_service) {
+		this.log.debug("Creating Switch service for receiver %s", this.name)
 		this.switchService = new Service.Switch(this.name);
 
 		this.switchService
@@ -769,10 +762,11 @@ getServices: function() {
 		this.switchService.addCharacteristic(RxTypes.InputLabel);
 		this.enabledServices.push(this.switchService);
 		if (this.volume_dimmer) {
+			this.log.debug("Creating Dimmer service linked to Switch for receiver %s", this.name)
 			this.prepareVolumeDimmer(this.switchService);
 		}
 	} else {
-
+		this.log.debug("Creating TV service for receiver %s", this.name)
 		this.tvService = new Service.Television(this.name);
 
 		this.tvService
@@ -805,6 +799,7 @@ getServices: function() {
 		this.enabledServices.push(this.tvService);
 		this.prepareTvSpeakerService();
 		if (this.volume_dimmer) {
+			this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
 			this.prepareVolumeDimmer(this.tvService);
 		}
 	}
