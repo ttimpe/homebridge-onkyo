@@ -1,5 +1,5 @@
 {
-  "name": "homebridge-onkyo-tv",
+  "name": "homebridge-onkyo",
   "version": "0.7.0",
   "description": "Homebridge plugin for Onkyo Receivers",
   "main": "index.js",

@@ -1,30 +1,70 @@
 var Service;
 var Characteristic;
+var Accessory;
 var RxTypes, RxInputs;
 var pollingtoevent = require('polling-to-event');
 var round = require( 'math-round' );
+var accessories = [];
+var package = require('./package.json')
 
 module.exports = function(homebridge)
 {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
+  Accessory = homebridge.platformAcessory;
+  UUIDGen = homebridge.hap.uuid;
   RxTypes = require('./RxTypes.js')(homebridge);
-  homebridge.registerAccessory("homebridge-onkyo-tv", "Onkyo-tv", OnkyoPlatform);
+  homebridge.registerPlatform("homebridge-onkyo", "Onkyo", OnkyoPlatform);
 }
 
-function OnkyoPlatform (log, config)
-{
+function OnkyoPlatform (log, config, api) {
+	var platform = this;
+	this.api = api;
+	this.config = config;
 	this.log = log;
+	this.receivers = this.config['receivers']
+}
+
+OnkyoPlatform.prototype.accessories = function(callback) {
+	var self = this;
+	this.log.info("Config: %s", this.config);
+	this.numberReceivers = this.receivers.length;
+	this.log.info("Creating %s receivers...", this.numberReceivers);
+
+	this.receivers.forEach(function(receiver) {
+		var accessory = new OnkyoAccessory(self, receiver);
+		accessories.push(accessory);
+	})
+
+	callback(accessories);
+}
+
+// function OnkyoAccessory (platform, receiver) {
+// 	this.init.call(this, platform, receiver)
+// }
+
+function OnkyoAccessory (platform, receiver)
+{	
+	this.platform = platform;
+	this.log = platform.log;
 	var that = this;
+
 	this.eiscp = require('eiscp');
 	this.setAttempt = 0;
-	this.enabledServices = []
+	this.enabledServices = [];
 
+	config = receiver;
+	this.log.info("Receiver: %j", config);
 	this.name = config["name"];
 	this.ip_address	= config["ip_address"];
 	this.model = config["model"];
 	this.zone = config["zone"] || "main";
 	this.inputs = config["inputs"];
+	this.volume_dimmer = config["volume_dimmer"] || false;
+	this.switch_service = config["switch_service"] || false;
+
+	// var uuid = UUIDGen.generate(this.name);
+	// this.accessory = new Accessory(this.name, uuid);
 
 	this.cmdMap = new Array();
 	this.cmdMap["main"] = new Array();
@@ -180,7 +220,7 @@ function OnkyoPlatform (log, config)
 	}
 }
 
-OnkyoPlatform.prototype = {
+OnkyoAccessory.prototype = {
 
 eventDebug: function( response)
 {
@@ -195,6 +235,7 @@ eventError: function( response)
 eventConnect: function( response)
 {
 	this.log.info( "eventConnect: %s", response);
+	this.reachable = true;
 },
 
 eventSystemPower: function( response)
@@ -271,6 +312,7 @@ eventVolume: function( response)
 eventClose: function( response)
 {
 	this.log.debug( "eventClose: %s", response);
+	this.reachable = false;
 },
 
 setPowerState: function(powerOn, callback, context) {
@@ -699,47 +741,79 @@ getServices: function() {
     informationService
     .setCharacteristic(Characteristic.Manufacturer, this.avrManufacturer)
     .setCharacteristic(Characteristic.Model, this.model)
-	.setCharacteristic(Characteristic.SerialNumber, this.avrSerial);
+	.setCharacteristic(Characteristic.SerialNumber, this.avrSerial)
+	.setCharacteristic(Characteristic.FirmwareRevision, package.version);
 
 	this.enabledServices.push(informationService);
 
-	this.tvService = new Service.Television(this.name);
+	if (this.switch_service) {
+		this.switchService = new Service.Switch(this.name);
 
-	this.tvService
-		.setCharacteristic(Characteristic.ConfiguredName, this.name);
-	
-	this.tvService
-		.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
-	
-	this.addSources(this.tvService)
+		this.switchService
+			.getCharacteristic(Characteristic.On)
+			.on('get', this.getPowerState.bind(this))
+			.on('set', this.setPowerState.bind(this));
 
-	this.tvService
-        .getCharacteristic(Characteristic.Active)
-        .on('get', this.getPowerState.bind(this))
-        .on('set', this.setPowerState.bind(this));
+		this.switchService.addCharacteristic(Characteristic.Volume)
+			.on('get', this.getVolumeState.bind(this))
+			.on('set', this.setVolumeState.bind(this));
 
-	this.tvService
-		.getCharacteristic(Characteristic.On)
-		.on('get', this.getPowerState.bind(this))
-		.on('set', this.setPowerState.bind(this));
+		this.switchService.addCharacteristic(Characteristic.Mute)
+			.on('get', this.getMuteState.bind(this))
+			.on('set', this.setMuteState.bind(this));
 
-	this.tvService
-        .getCharacteristic(Characteristic.ActiveIdentifier)
-		.on('set', this.setInputSource.bind(this))
-		.on('get', this.getInputSource.bind(this));
-	
-	this.tvService
-        .getCharacteristic(Characteristic.RemoteKey)
-        .on('set', this.remoteKeyPress.bind(this));
+		this.switchService.addCharacteristic(RxTypes.InputSource)
+			.on('get', this.getInputSource.bind(this))
+			.on('set', this.setInputSource.bind(this));
+
+		this.switchService.addCharacteristic(RxTypes.InputLabel);
+		this.enabledServices.push(this.switchService);
+		if (this.volume_dimmer) {
+			this.prepareVolumeDimmer(this.switchService);
+		}
+	} else {
+
+		this.tvService = new Service.Television(this.name);
+
+		this.tvService
+			.setCharacteristic(Characteristic.ConfiguredName, this.name);
 		
-	this.enabledServices.push(this.tvService);
-	this.prepareTvSpeakerService();
+		this.tvService
+			.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+		
+		this.addSources(this.tvService)
+
+		this.tvService
+			.getCharacteristic(Characteristic.Active)
+			.on('get', this.getPowerState.bind(this))
+			.on('set', this.setPowerState.bind(this));
+
+		this.tvService
+			.getCharacteristic(Characteristic.On)
+			.on('get', this.getPowerState.bind(this))
+			.on('set', this.setPowerState.bind(this));
+
+		this.tvService
+			.getCharacteristic(Characteristic.ActiveIdentifier)
+			.on('set', this.setInputSource.bind(this))
+			.on('get', this.getInputSource.bind(this));
+		
+		this.tvService
+			.getCharacteristic(Characteristic.RemoteKey)
+			.on('set', this.remoteKeyPress.bind(this));
+			
+		this.enabledServices.push(this.tvService);
+		this.prepareTvSpeakerService();
+		if (this.volume_dimmer) {
+			this.prepareVolumeDimmer(this.tvService);
+		}
+	}
 	return this.enabledServices;
 }
 };
 
 
-OnkyoPlatform.prototype.prepareTvSpeakerService = function() {
+OnkyoAccessory.prototype.prepareTvSpeakerService = function() {
 
     this.tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume', 'tvSpeakerService');
     this.tvSpeakerService
@@ -761,3 +835,29 @@ OnkyoPlatform.prototype.prepareTvSpeakerService = function() {
     this.enabledServices.push(this.tvSpeakerService);
 
 };
+
+OnkyoAccessory.prototype.prepareVolumeDimmer = function(service) {
+	this.dimmer = new Service.Lightbulb(this.name + ' Volume', 'dimmer');
+	this.dimmer
+		.getCharacteristic(Characteristic.On)
+		// Inverted logic taken from https://github.com/langovoi/homebridge-upnp
+		.on('get', (callback) => {
+			this.getMuteState((err, value) => {
+				if (err) {
+					callback(err);
+					return;
+				}
+
+				callback(null, !value);
+			})
+		})
+		.on('set', (value, callback) => this.setMuteState(!value, callback));
+	this.dimmer
+		.addCharacteristic(Characteristic.Brightness)
+		.on('get', this.getVolumeState.bind(this))
+		.on('set', this.setVolumeState.bind(this));
+	
+	service.addLinkedService(this.dimmer);
+	this.enabledServices.push(this.dimmer);
+
+}
