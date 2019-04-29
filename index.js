@@ -132,7 +132,7 @@ function OnkyoAccessory (platform, receiver)
 	);
 
 // Create the RxInput object for later use.
-	var eiscpData = require('./node_modules/eiscp/eiscp-commands.json');
+	var eiscpData = require('eiscp/eiscp-commands.json');
 	eiscpData = eiscpData.commands.main.SLI.values;
 	var newobj = '{ "Inputs" : [';
 	for (var exkey in eiscpData) {
