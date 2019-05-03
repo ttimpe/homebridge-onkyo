@@ -159,7 +159,7 @@ function OnkyoAccessory (platform, receiver)
 			that.state = data;
 			that.log.debug("event - PWR status poller - new state: ", that.state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
+				that.tvService.getCharacteristic(Characteristic.Active).updateValue(that.state, null, "statuspoll");
 			}
 		});
 // Audio-Input Polling
@@ -175,7 +175,7 @@ function OnkyoAccessory (platform, receiver)
 			that.i_state = data;
 			that.log.debug("event - INPUT status poller - new i_state: ", that.i_state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.ActiveIdentifier).setValue(that.i_state, null, "i_statuspoll");
+				that.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(that.i_state, null, "i_statuspoll");
 			}
 		});
 // Audio-Muting Polling
@@ -191,7 +191,7 @@ function OnkyoAccessory (platform, receiver)
 			that.m_state = data;
 			that.log.debug("event - MUTE status poller - new m_state: ", that.m_state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+				that.tvService.getCharacteristic(Characteristic.Mute).updateValue(that.m_state, null, "m_statuspoll");
 			}
 		});
 // Volume Polling
@@ -207,7 +207,7 @@ function OnkyoAccessory (platform, receiver)
 			that.v_state = data;
 			that.log.debug("event - VOLUME status poller - new v_state: ", that.v_state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
+				that.tvService.getCharacteristic(Characteristic.Volume).updateValue(that.v_state, null, "v_statuspoll");
 			}
 		});
 	}
@@ -234,10 +234,10 @@ eventConnect: function( response)
 eventSystemPower: function( response)
 {
 	this.state = (response == "on");
-	this.log.debug("eventSystemPower - message: %s, new state %s", response, this.state);
+	this.log.info("eventSystemPower - message: %s, new state %s", response, this.state);
 	//Communicate status
 	if (this.tvService ) {
-		this.tvService.getCharacteristic(Characteristic.Active).setValue(this.state, null, "statuspoll");
+		this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state, null, "statuspoll");
 	}
 },
 
@@ -247,7 +247,7 @@ eventAudioMuting: function( response)
 	this.log.debug("eventAudioMuting - message: %s, new m_state %s", response, this.m_state);
 	//Communicate status
 	if (this.tvService ) {
-		this.tvService.getCharacteristic(Characteristic.Mute).setValue(this.m_state, null, "m_statuspoll");
+		this.tvService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state, null, "m_statuspoll");
 	}
 },
 
@@ -266,12 +266,12 @@ eventInput: function( response)
 				break;
 			}
 		}
-		this.log.debug("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
+		this.log.info("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
 
 		//Communicate status
 		if (this.tvService ) {
 			this.tvService.setCharacteristic(RxTypes.InputLabel,input);
-			this.tvService.getCharacteristic(RxTypes.InputSource).setValue(this.i_state, null, "i_statuspoll");
+			this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
 		}
 	} else {
 		// Then invalid Input chosen
@@ -297,7 +297,7 @@ eventVolume: function( response)
 	}
 	//Communicate status
 	if (this.tvService ) {
-		this.tvService.getCharacteristic(Characteristic.Volume).setValue(this.v_state, null, "v_statuspoll");
+		this.tvService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state, null, "v_statuspoll");
 	}
 },
 
@@ -335,7 +335,7 @@ setPowerState: function(powerOn, callback, context) {
 				that.state = false;
 				that.log.error( "setPowerState - PWR ON: ERROR - current state: %s", that.state);
 				if (that.tvService ) {
-					that.tvService.getCharacteristic(Characteristic.Active).setValue(powerOn, null, "statuspoll");
+					that.tvService.getCharacteristic(Characteristic.Active).updateValue(powerOn, null, "statuspoll");
 				}
 			} else {
 				// If the AVR has just been turned on, apply the default volume
@@ -368,7 +368,7 @@ setPowerState: function(powerOn, callback, context) {
 				that.state = false;
 				that.log.error( "setPowerState - PWR OFF: ERROR - current state: %s", that.state);
 				if (that.tvService ) {
-					that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
+					that.tvService.getCharacteristic(Characteristic.Active).updateValue(that.state, null, "statuspoll");
 				}
 			}
 		}.bind(this) );
@@ -401,7 +401,7 @@ getPowerState: function(callback, context) {
 			that.state = false;
 			that.log.debug( "getPowerState - PWR QRY: ERROR - current state: %s", that.state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.Active).setValue(that.state, null, "statuspoll");
+				that.tvService.getCharacteristic(Characteristic.Active).updateValue(that.state, null, "statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -433,7 +433,7 @@ getVolumeState: function(callback, context) {
 			that.v_state = 0;
 			that.log.debug( "getVolumeState - VOLUME QRY: ERROR - current v_state: %s", that.v_state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
+				that.tvService.getCharacteristic(Characteristic.Volume).updateValue(that.v_state, null, "v_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -480,7 +480,7 @@ setVolumeState: function(volumeLvl, callback, context) {
 			that.v_state = 0;
 			that.log.debug( "setVolumeState - VOLUME : ERROR - current v_state: %s", that.v_state);
 			if (that.switchService ) {
-				that.switchService.getCharacteristic(Characteristic.Volume).setValue(that.v_state, null, "v_statuspoll");
+				that.switchService.getCharacteristic(Characteristic.Volume).updateValue(that.v_state, null, "v_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -552,7 +552,7 @@ getMuteState: function(callback, context) {
 			that.m_state = false;
 			that.log.debug( "getMuteState - MUTE QRY: ERROR - current m_state: %s", that.m_state);
 			if (that.tvService ) {
-				that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+				that.tvService.getCharacteristic(Characteristic.Mute).updateValue(that.m_state, null, "m_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -585,7 +585,7 @@ setMuteState: function(muteOn, callback, context) {
 				that.m_state = false;
 				that.log.error( "setMuteState - MUTE ON: ERROR - current m_state: %s", that.m_state);
 				if (that.tvService ) {
-					that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+					that.tvService.getCharacteristic(Characteristic.Mute).updateValue(that.m_state, null, "m_statuspoll");
 				}
 			}
 		}.bind(this) );
@@ -596,7 +596,7 @@ setMuteState: function(muteOn, callback, context) {
 				that.m_state = false;
 				that.log.error( "setMuteState - MUTE OFF: ERROR - current m_state: %s", that.m_state);
 				if (that.tvService ) {
-					that.tvService.getCharacteristic(Characteristic.Mute).setValue(that.m_state, null, "m_statuspoll");
+					that.tvService.getCharacteristic(Characteristic.Mute).updateValue(that.m_state, null, "m_statuspoll");
 				}
 			}
 		}.bind(this) );
@@ -630,7 +630,7 @@ getInputSource: function(callback, context) {
 			that.log.debug( "getInputState - INPUT QRY: ERROR - current i_state: %s", that.i_state);
 			if (that.tvService ) {
 				that.tvService.setCharacteristic(RxTypes.InputLabel,"get error")
-				that.tvService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
+				that.tvService.getCharacteristic(RxTypes.InputSource).updateValue(that.i_state, null, "i_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -663,7 +663,7 @@ setInputSource: function(source, callback, context) {
 			that.log.debug( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", that.i_state, source.toString());
 			if (that.tvService ) {
 				that.tvService.setCharacteristic(RxTypes.InputLabel,"set error")
-				that.tvService.getCharacteristic(RxTypes.InputSource).setValue(that.i_state, null, "i_statuspoll");
+				that.tvService.getCharacteristic(RxTypes.InputSource).updateValue(that.i_state, null, "i_statuspoll");
 			}
 		}
 	}.bind(this) );
@@ -727,8 +727,6 @@ addSources: function(service) {
 },
 
 getServices: function() {
-	var that = this;
-
 	var informationService = new Service.AccessoryInformation();
     informationService
     .setCharacteristic(Characteristic.Manufacturer, this.avrManufacturer)
@@ -782,10 +780,10 @@ getServices: function() {
 			.on('get', this.getPowerState.bind(this))
 			.on('set', this.setPowerState.bind(this));
 
-		this.tvService
-			.getCharacteristic(Characteristic.On)
-			.on('get', this.getPowerState.bind(this))
-			.on('set', this.setPowerState.bind(this));
+		// this.tvService
+		// 	.getCharacteristic(Characteristic.On)
+		// 	.on('get', this.getPowerState.bind(this))
+		// 	.on('set', this.setPowerState.bind(this));
 
 		this.tvService
 			.getCharacteristic(Characteristic.ActiveIdentifier)
