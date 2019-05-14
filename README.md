@@ -39,28 +39,6 @@ For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples dir
 
 Example platform config (needs to be added to the homebridge config.json):
  ```
-<<<<<<< HEAD
-"accessories": [
-	{
-		"accessory": "Onkyo-tv",
-		"name": "Stereo",
-		"ip_address": "10.0.1.23",
-		"model" : "TX-NR609",
-		"poll_status_interval": "900",
-		"default_input": "net",
-		"default_volume": "10",
-		"max_volume": "35",
-		"map_volume_100": true,
-		"zone" : "zone2",
-		"inputs": {
-				"dvd": "Blu-ray",
-				"video6": "Apple TV",
-				"video4": "AUX",
-				"cd": "TV/CD"
-			}
-	}
-]
-=======
 "platforms": [{
         "platform": "Onkyo",
         "name": "Onkyo",
@@ -85,7 +63,6 @@ Example platform config (needs to be added to the homebridge config.json):
             }
         ]
     }]
->>>>>>> platform
  ```
 ### Config Explanation:
 
