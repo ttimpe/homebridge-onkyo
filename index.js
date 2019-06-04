@@ -81,7 +81,25 @@ function HttpStatusAccessory(log, config)
 	);
 
 // Create the RxInput object for later use.
-	var eiscpData = require('../eiscp/eiscp-commands.json');
+// The path used by require seems to be different in the various implementations of homebridge,
+// so trying two different ones.	
+	var success = false;
+	try {
+     	  var eiscpData = require('../eiscp/eiscp-commands.json');
+    	  success = true;
+        } catch {
+    	  this.log.debug("could not load ../eiscp/eiscp-commands.json")
+	}	
+        if (success == false) {
+    	  try {
+	  	var eiscpData = require('./node_modules/eiscp/eiscp-commands.json');
+    		success = true;
+    	  } catch {
+    		this.log.debug("could not load ./node_modules/eiscp/eiscp-commands.json");
+		this.log("Could not load eiscp-commands.json file. Giving up.")  
+	  }	
+        }
+	
 	eiscpData = eiscpData.commands.main.SLI.values;
 	var newobj = '{ "Inputs" : [';
 	for (var exkey in eiscpData) {
