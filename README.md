@@ -3,6 +3,7 @@
 
 Homebridge plugin for Onkyo Receivers
 Should work for all supported models as listed in the node_modules/eiscp/eiscp-commands.json. If your model is not listed, try TX-NR609.
+[List of supported models](https://github.com/ToddGreenfield/homebridge-onkyo/wiki/List-of-supported-Onkyo-receivers)
 
 # Description
 
