@@ -1,28 +1,18 @@
-var Service;
-var Characteristic;
-var Accessory;
-var RxTypes, RxInputs;
+'use strict';
+
+let Service
+let Characteristic;
+let Accessory;
+var RxInputs;
 var pollingtoevent = require('polling-to-event');
 var round = require( 'math-round' );
 var accessories = [];
-var info = require('./package.json')
+var info = require('./package.json');
 
-module.exports = (homebridge) =>
-{
-  Service = homebridge.hap.Service;
-  Characteristic = homebridge.hap.Characteristic;
-  Accessory = homebridge.platformAcessory;
-  UUIDGen = homebridge.hap.uuid;
-  RxTypes = require('./RxTypes.js')(homebridge);
-//   OnkyoPlatform.init(homebridge);
-  homebridge.registerPlatform("homebridge-onkyo", "Onkyo", OnkyoPlatform);
-}
+let RxTypes = require('./RxTypes.js');
 
 class OnkyoPlatform {
 	constructor(log, config, api) {
-		// this.homebridge = homebridge
-		// this.UUID = UUIDGen;
-		// var platform = this;
 		this.api = api;
 		this.config = config;
 		this.log = log;
@@ -32,24 +22,18 @@ class OnkyoPlatform {
 		this.createAccessories(this, this.receivers);
 	}
 
-	// static init(homebridgeRef) {
-	// 	this.homebridge = homebridgeRef
-	// }
-
 	createAccessories(platform, receivers) {
 		platform.numberReceivers = platform.receivers.length;
 		platform.log.debug("Creating %s receivers...", platform.numberReceivers);
 	
 		receivers.forEach(function(receiver) {
 			var accessory = new OnkyoAccessory(platform, receiver);
-			// platform.log.info(accessory.tvService)
 			platform.receiverAccessories.push(accessory);
 		})
 	}
 
 	accessories (callback) {
 		callback(this.receiverAccessories);
-		// return this.receiverAccessories;
 	}
 }
 
@@ -106,9 +90,9 @@ class OnkyoAccessory {
 		this.m_state = false;
 		this.v_state = 0;
 		this.i_state = 1;
-		this.interval = parseInt( this.poll_status_interval);
+		this.interval = parseInt(this.poll_status_interval);
 		this.avrManufacturer = "Onkyo";
-		this.avrSerial = this.ip_address;
+		this.avrSerial = config["serial"] || this.ip_address;
 
 		// this.eiscp.discover(function(err,result){
 		// 	if(err) {
@@ -138,10 +122,28 @@ class OnkyoAccessory {
 			{host: this.ip_address, reconnect: true, model: this.model}
 		);
 
+		this.setUp();
+	}
+
+	setUp() {
 		this.createRxInput();
 		this.polling(this);
 
-		this.setUp();
+		// this.log(infoService)
+		if (this.switch_service) {
+			this.createSwitchService();
+		} else {
+			var television = this.createTvService();
+			this.enabledServices.push(television);
+			this.createTvSpeakerService(television);
+		}
+		const infoService = this.createAccessoryInformationService();
+		this.enabledServices.push(infoService);
+
+	}
+
+	getServices() {
+		return this.enabledServices;
 	}
 	
 	createRxInput() {
@@ -281,17 +283,18 @@ class OnkyoAccessory {
 			// Convert to number for input slider and i_state
 			for (var a in RxInputs.Inputs) {
 				if (RxInputs.Inputs[a].label == input) {
-					this.i_state = a;
+					this.i_state = a + 1;
 					break;
 				}
 			}
 			this.log.info("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
 
 			//Communicate status
-			if (this.tvService ) {
-				this.tvService.setCharacteristic(RxTypes.InputLabel,input);
-				this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
-			}
+			// if (this.tvService ) {
+			// 	this.tvService.setCharacteristic(RxTypes.InputLabel,input);
+			// 	this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
+			// }
+			this.getInputSource.bind(this);
 		} else {
 			// Then invalid Input chosen
 			this.log.error("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
@@ -669,7 +672,7 @@ class OnkyoAccessory {
 		//have the event later on execute changes
 		callback(null, this.i_state);
 	
-		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + RxInputs.Inputs[this.i_state].label, function(error, response) {
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + this.configured_inputs[this.i_state].label, function(error, response) {
 			if (error) {
 				this.log.debug( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", this.i_state, source.toString());
 				if (this.tvService ) {
@@ -710,28 +713,29 @@ class OnkyoAccessory {
 		// If input name mappings are provided, use them.
 		// Else, load all inputs from query (useful for finding inputs to map).
 		RxInputs['Inputs'].forEach((i, x) =>  {
+			var inputName;
 			if (this.inputs) {
 				if (this.inputs[i['label']]) {
-					var inputName = this.inputs[i['label']]
-					let tmpInput = new Service.InputSource(inputName, 'inputSource' + x);
+					inputName = this.inputs[i['label']];
+					let tmpInput = new Service.InputSource(inputName, i['code']);
 					tmpInput
-						.setCharacteristic(Characteristic.Identifier, x)
+						.setCharacteristic(Characteristic.Identifier, i['code'])
 						.setCharacteristic(Characteristic.ConfiguredName, inputName)
 						.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
 						.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
 			
 					service.addLinkedService(tmpInput);
-					this.enabledServices.push(tmpInput);
+					this.enabledServices.push(tmpInput);			
 				}
 			} else {
-				var inputName = i['label']
-				let tmpInput = new Service.InputSource(inputName, 'inputSource' + x);
+				var inputName = i['label'];
+				let tmpInput = new Service.InputSource(inputName, i['code']);
 				tmpInput
-					.setCharacteristic(Characteristic.Identifier, x)
+					.setCharacteristic(Characteristic.Identifier, i['code'])
 					.setCharacteristic(Characteristic.ConfiguredName, inputName)
 					.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
 					.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
-	
+		
 				service.addLinkedService(tmpInput);
 				this.enabledServices.push(tmpInput);
 			}
@@ -747,8 +751,16 @@ class OnkyoAccessory {
 			.setCharacteristic(Characteristic.SerialNumber, this.avrSerial)
 			.setCharacteristic(Characteristic.FirmwareRevision, info.version)
 			.setCharacteristic(Characteristic.Name, this.name);
-	
-		this.enabledServices.push(informationService);
+
+		// informationService
+		// 	.setCharacteristic(Characteristic.Manufacturer, "Onkyo")
+		// 	.setCharacteristic(Characteristic.Model, "TX-NR515")
+		// 	.setCharacteristic(Characteristic.SerialNumber, "abcde12345")
+		// 	.setCharacteristic(Characteristic.FirmwareRevision, "0.0")
+		// 	.setCharacteristic(Characteristic.Name, "Receiver");
+		
+		return informationService;
+		// this.enabledServices.push(informationService);
 	}
 
 	createSwitchService() {
@@ -782,20 +794,20 @@ class OnkyoAccessory {
 
 	createTvService() {
 		this.log.debug("Creating TV service for receiver %s", this.name)
-		this.tvService = new Service.Television(this.name);
+		const tvService = new Service.Television(this.name);
 
-		this.tvService
+		this.addSources(tvService)
+
+		tvService
 			.setCharacteristic(Characteristic.ConfiguredName, this.name);
 			// .setProps({
 			// 	perms: [Characteristic.Perms.READ]
 			// });
 		
-		this.tvService
+		tvService
 			.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 		
-		this.addSources(this.tvService)
-
-		this.tvService
+		tvService
 			.getCharacteristic(Characteristic.Active)
 			.on('get', this.getPowerState.bind(this))
 			.on('set', this.setPowerState.bind(this));
@@ -805,21 +817,21 @@ class OnkyoAccessory {
 		// 	.on('get', this.getPowerState.bind(this))
 		// 	.on('set', this.setPowerState.bind(this));
 
-		this.tvService
+		tvService
 			.getCharacteristic(Characteristic.ActiveIdentifier)
 			.on('set', this.setInputSource.bind(this))
 			.on('get', this.getInputSource.bind(this));
 		
-		this.tvService
+		tvService
 			.getCharacteristic(Characteristic.RemoteKey)
 			.on('set', this.remoteKeyPress.bind(this));
 			
-		this.enabledServices.push(this.tvService);
+		// this.enabledServices.push(this.tvService);
 		// if (this.volume_dimmer) {
 		// 	this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
 		// 	this.createVolumeDimmer(this.tvService);
 		// }
-		return this.tvService;
+		return tvService;
 	}
 	
 	createTvSpeakerService(television) {
@@ -870,18 +882,14 @@ class OnkyoAccessory {
 		this.enabledServices.push(this.dimmer);
 	}
 
-	setUp() {
-		this.createAccessoryInformationService();
-	
-		if (this.switch_service) {
-			this.createSwitchService();
-		} else {
-			var television = this.createTvService();
-			this.createTvSpeakerService(television);
-		}
-	}
+}
 
-	getServices() {
-		return this.enabledServices;
-	}
+module.exports = (homebridge) =>
+{
+//   Service = homebridge.hap.Service;
+//   Characteristic = homebridge.hap.Characteristic;
+//   Accessory = homebridge.platformAcessory;
+//   UUIDGen = homebridge.hap.uuid;
+  ({ Service, Characteristic } = homebridge.hap);
+  homebridge.registerPlatform("homebridge-onkyo", "Onkyo", OnkyoPlatform);
 }
