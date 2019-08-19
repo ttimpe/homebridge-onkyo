@@ -90,6 +90,7 @@ class OnkyoAccessory {
 		this.m_state = false;
 		this.v_state = 0;
 		this.i_state = 1;
+		this.configured_inputs = [];
 		this.interval = parseInt(this.poll_status_interval);
 		this.avrManufacturer = "Onkyo";
 		this.avrSerial = config["serial"] || this.ip_address;
@@ -135,7 +136,7 @@ class OnkyoAccessory {
 		} else {
 			var television = this.createTvService();
 			this.enabledServices.push(television);
-			this.createTvSpeakerService(television);
+			// this.createTvSpeakerService(television);
 		}
 		const infoService = this.createAccessoryInformationService();
 		this.enabledServices.push(infoService);
@@ -149,20 +150,39 @@ class OnkyoAccessory {
 	createRxInput() {
 	// Create the RxInput object for later use.
 		var eiscpData = require('./node_modules/eiscp/eiscp-commands.json');
-		eiscpData = eiscpData.commands.main.SLI.values;
+		var inSets = [];
+		for (set in eiscpData.modelsets) {
+			eiscpData.modelsets[set].forEach(model => {
+				if (model.includes("TX-NR609")) {
+					inSets.push(set);
+				}
+			});
+		}
+		
+		
+		var eiscpData = eiscpData.commands.main.SLI.values;
 		var newobj = '{ "Inputs" : [';
 		for (var exkey in eiscpData) {
-				var hold = eiscpData[exkey].name.toString();
-				if (hold.includes(',')) {
-						hold = hold.substring(0,hold.indexOf(','));
-				}
-		if (exkey.includes('“') || exkey.includes('“')) {
-			exkey = exkey.replace(/\“/g, "");
-			exkey = exkey.replace(/\”/g, "");
-		}
+			var hold = eiscpData[exkey].name.toString();
+			if (hold.includes(',')) {
+				hold = hold.substring(0,hold.indexOf(','));
+			}
+			if (exkey.includes('“') || exkey.includes('“')) {
+				exkey = exkey.replace(/\“/g, "");
+				exkey = exkey.replace(/\”/g, "");
+			}
+			if (exkey.includes("UP") || exkey.includes("DOWN") || exkey.includes("QSTN")) {
+				continue
+			}
+			var set = eiscpData[exkey]['models']
+			if (inSets.includes(set)) {
 				newobj = newobj + '{ "code":"'+exkey+'" , "label":"'+hold+'" },';
+			} else {
+				continue
+			}
 		}
-				newobj = newobj + '{ "code":"2B" , "label":"network" } ]}';
+		// Drop last comma first
+		newobj = newobj.slice(0,-1) + ']}';
 		RxInputs = JSON.parse(newobj);
 	}
 
@@ -283,7 +303,7 @@ class OnkyoAccessory {
 			// Convert to number for input slider and i_state
 			for (var a in RxInputs.Inputs) {
 				if (RxInputs.Inputs[a].label == input) {
-					this.i_state = a + 1;
+					this.i_state = a;
 					break;
 				}
 			}
@@ -665,14 +685,32 @@ class OnkyoAccessory {
 		}
 	
 		this.setAttempt = this.setAttempt+1;
-		this.i_state = parseInt(source);
-		this.log.debug("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", this.i_state, RxInputs.Inputs[this.i_state].label);
+		var label;
+		var index;
+		this.log.info(this.i_state)
+		this.configured_inputs.forEach((a, i) => {
+			if (a['subtype'] == source) {
+				this.i_state = a['code'];
+				label = a['displayName'];
+				index = i;
+			}
+		})
+
+		// for (var a in RxInputs.Inputs) {
+		// 	if (a['code'] == source) {
+		// 		this.i_state = a['code'];
+		// 		break;
+		// 	}
+		// }
+		// this.i_state = parseInt(source);
+		this.log.debug("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", this.i_state, label);
 	
 		//do the callback immediately, to free homekit
 		//have the event later on execute changes
 		callback(null, this.i_state);
-	
-		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + this.configured_inputs[this.i_state].label, function(error, response) {
+		this.log.info(this.i_state)
+		this.log.info(RxInputs["Inputs"])
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + RxInputs['Inputs'][parseInt(this.i_state)].label, function(error, response) {
 			if (error) {
 				this.log.debug( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", this.i_state, source.toString());
 				if (this.tvService ) {
@@ -711,34 +749,31 @@ class OnkyoAccessory {
 	////////////////////////
 	addSources(service) {
 		// If input name mappings are provided, use them.
-		// Else, load all inputs from query (useful for finding inputs to map).
 		RxInputs['Inputs'].forEach((i, x) =>  {
-			var inputName;
+			var inputName = i['label'];
 			if (this.inputs) {
 				if (this.inputs[i['label']]) {
-					inputName = this.inputs[i['label']];
-					let tmpInput = new Service.InputSource(inputName, i['code']);
-					tmpInput
-						.setCharacteristic(Characteristic.Identifier, i['code'])
-						.setCharacteristic(Characteristic.ConfiguredName, inputName)
-						.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-						.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
-			
-					service.addLinkedService(tmpInput);
-					this.enabledServices.push(tmpInput);			
+					inputName = this.inputs[i['label']];		
 				}
-			} else {
-				var inputName = i['label'];
-				let tmpInput = new Service.InputSource(inputName, i['code']);
-				tmpInput
-					.setCharacteristic(Characteristic.Identifier, i['code'])
-					.setCharacteristic(Characteristic.ConfiguredName, inputName)
-					.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-					.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
-		
-				service.addLinkedService(tmpInput);
-				this.enabledServices.push(tmpInput);
 			}
+			var dupe = false;
+			this.configured_inputs.forEach((y, z) => {
+				if (y['subtype'] == i['code']) {
+					dupe = true;
+				}
+			})
+
+			if (dupe) return
+
+			let tmpInput = new Service.InputSource(inputName, i['code']);
+			tmpInput
+				.setCharacteristic(Characteristic.Identifier, i['code'])
+				.setCharacteristic(Characteristic.ConfiguredName, inputName)
+				.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
+			service.addLinkedService(tmpInput);
+			this.configured_inputs.push(tmpInput);
+			this.enabledServices.push(tmpInput);
 		})
 	
 	}
@@ -834,28 +869,28 @@ class OnkyoAccessory {
 		return tvService;
 	}
 	
-	createTvSpeakerService(television) {
-		var tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume');
-		tvSpeakerService
-			.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
-			.setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
-		tvSpeakerService
-			.getCharacteristic(Characteristic.VolumeSelector)
-			.on('set', this.setVolumeRelative.bind(this));
-		tvSpeakerService
-			.getCharacteristic(Characteristic.Mute)
-			.on('get', this.getMuteState.bind(this))
-			.on('set', this.setMuteState.bind(this));
-		tvSpeakerService
-			.addCharacteristic(Characteristic.Volume)
-			.on('get', this.getVolumeState.bind(this))
-			.on('set', this.setVolumeState.bind(this));
+	// createTvSpeakerService(television) {
+	// 	var tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume');
+	// 	tvSpeakerService
+	// 		.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+	// 		.setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
+	// 	tvSpeakerService
+	// 		.getCharacteristic(Characteristic.VolumeSelector)
+	// 		.on('set', this.setVolumeRelative.bind(this));
+	// 	tvSpeakerService
+	// 		.getCharacteristic(Characteristic.Mute)
+	// 		.on('get', this.getMuteState.bind(this))
+	// 		.on('set', this.setMuteState.bind(this));
+	// 	tvSpeakerService
+	// 		.addCharacteristic(Characteristic.Volume)
+	// 		.on('get', this.getVolumeState.bind(this))
+	// 		.on('set', this.setVolumeState.bind(this));
 	
-		this.log.info(tvSpeakerService);
+	// 	this.log.info(tvSpeakerService);
 		
-		television.addLinkedService(this.tvSpeakerService);
-		this.enabledServices.push(this.tvSpeakerService);
-	}
+	// 	television.addLinkedService(this.tvSpeakerService);
+	// 	this.enabledServices.push(this.tvSpeakerService);
+	// }
 	
 	createVolumeDimmer(service) {
 		this.dimmer = new Service.Lightbulb(this.name + ' Volume', 'dimmer');
@@ -883,6 +918,29 @@ class OnkyoAccessory {
 	}
 
 }
+
+OnkyoAccessory.prototype.createTvSpeakerService = function(tvService) {
+
+    this.tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume', 'tvSpeakerService');
+    this.tvSpeakerService
+        .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+        .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
+    this.tvSpeakerService
+        .getCharacteristic(Characteristic.VolumeSelector)
+        .on('set', this.setVolumeRelative.bind(this));
+    this.tvSpeakerService
+        .getCharacteristic(Characteristic.Mute)
+        .on('get', this.getMuteState.bind(this))
+        .on('set', this.setMuteState.bind(this));
+    this.tvSpeakerService
+        .addCharacteristic(Characteristic.Volume)
+        .on('get', this.getVolumeState.bind(this))
+		.on('set', this.setVolumeState.bind(this));
+
+    tvService.addLinkedService(this.tvSpeakerService);
+    this.enabledServices.push(this.tvSpeakerService);
+
+};
 
 module.exports = (homebridge) =>
 {
