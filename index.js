@@ -89,7 +89,7 @@ class OnkyoAccessory {
 		this.state = false;
 		this.m_state = false;
 		this.v_state = 0;
-		this.i_state = 1;
+		this.i_state = "10";
 		this.configured_inputs = [];
 		this.interval = parseInt(this.poll_status_interval);
 		this.avrManufacturer = "Onkyo";
@@ -300,10 +300,10 @@ class OnkyoAccessory {
 			if (input.includes(',')) {
 				input = input.substring(0,input.indexOf(','));
 			}
-			// Convert to number for input slider and i_state
+			// Convert to i_state input code
 			for (var a in RxInputs.Inputs) {
 				if (RxInputs.Inputs[a].label == input) {
-					this.i_state = a;
+					this.i_state = RxInputs.Inputs[a].code;
 					break;
 				}
 			}
@@ -643,7 +643,7 @@ class OnkyoAccessory {
 		//if context is i_statuspoll, then we need to request the actual value
 		if (!context || context != "i_statuspoll") {
 			if (this.switchHandling == "poll") {
-				this.log.debug("getInputState - polling mode, return i_state: ", this.i_state);
+				this.log.info("getInputState - polling mode, return i_state: ", this.i_state);
 				callback(null, this.i_state);
 				return;
 			}
@@ -658,11 +658,11 @@ class OnkyoAccessory {
 		//do the callback immediately, to free homekit
 		//have the event later on execute changes
 		callback(null, this.i_state);
-		this.log.debug("getInputState - actual mode, return i_state: ", this.i_state);
+		this.log.info("getInputState - actual mode, return i_state: ", this.i_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "=query", function( error, data) {
 			if (error) {
 				this.i_state = 1;
-				this.log.debug( "getInputState - INPUT QRY: ERROR - current i_state: %s", this.i_state);
+				this.log.info( "getInputState - INPUT QRY: ERROR - current i_state: %s", this.i_state);
 				if (this.tvService ) {
 					this.tvService.setCharacteristic(RxTypes.InputLabel,"get error")
 					this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
@@ -674,27 +674,27 @@ class OnkyoAccessory {
 	setInputSource(source, callback, context) {
 	//if context is i_statuspoll, then we need to ensure this we do not set the actual value
 		if (context && context == "i_statuspoll") {
-			this.log.debug( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
+			this.log.info( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
 			callback(null, this.i_state);
 			return;
 		}
 		if (!this.ip_address) {
-			this.log.error("Ignoring request; No ip_address defined.");
+			this.log.info("Ignoring request; No ip_address defined.");
 			callback(new Error("No ip_address defined."));
 			return;
 		}
 	
 		this.setAttempt = this.setAttempt+1;
-		var label;
-		var index;
-		this.log.info(this.i_state)
-		this.configured_inputs.forEach((a, i) => {
-			if (a['subtype'] == source) {
-				this.i_state = a['code'];
-				label = a['displayName'];
-				index = i;
-			}
-		})
+		// var label;
+		// var index;
+		// this.configured_inputs.forEach((a, i) => {
+		// 	this.log.info(a['subtype'])
+		// 	if (a['subtype'] == source) {
+		// 		// this.i_state = a['code'];
+		// 		label = a['displayName'];
+		// 		index = i;
+		// 	}
+		// })
 
 		// for (var a in RxInputs.Inputs) {
 		// 	if (a['code'] == source) {
@@ -702,17 +702,23 @@ class OnkyoAccessory {
 		// 		break;
 		// 	}
 		// }
-		// this.i_state = parseInt(source);
-		this.log.debug("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", this.i_state, label);
+		this.i_state = source;
+		var label;
+		RxInputs["Inputs"].forEach((input, i) => {
+			if (input["code"] == this.i_state) {
+				label = input["label"];
+			}
+		})
+		this.log.info(this.i_state);
+		this.log.info("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", this.i_state, label);
 	
 		//do the callback immediately, to free homekit
 		//have the event later on execute changes
 		callback(null, this.i_state);
-		this.log.info(this.i_state)
-		this.log.info(RxInputs["Inputs"])
-		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + RxInputs['Inputs'][parseInt(this.i_state)].label, function(error, response) {
+		this.log.info(RxInputs["Inputs"]);
+		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + label, function(error, response) {
 			if (error) {
-				this.log.debug( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", this.i_state, source.toString());
+				this.log.info( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", this.i_state, source.toString());
 				if (this.tvService ) {
 					this.tvService.setCharacteristic(RxTypes.InputLabel,"set error")
 					this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
