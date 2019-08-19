@@ -392,9 +392,21 @@ class OnkyoAccessory {
 						}
 					// If the AVR has just been turned on, apply the Input default
 						this.log.debug("Attempting to set the default input selector to "+this.defaultInput);
-						if (powerOn && this.defaultInput) {
-							this.log.info("Setting default input selector to "+this.defaultInput);
-							this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "="+this.defaultInput, function(error, response) {
+
+						// Handle defaultInput being either a custom label or manufacturer label
+						var label = this.defaultInput;
+						this.configured_inputs.forEach((input, i) => {
+							if (input["displayName"] == this.defaultInput) {
+								RxInputs["Inputs"].forEach((x, y) => {
+									if (x["code"] == input["subtype"]) {
+										label = x["label"];
+									}
+								})
+							}
+						})
+						if (powerOn && label) {
+							this.log.info("Setting default input selector to "+label);
+							this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "="+label, function(error, response) {
 								if (error) {
 									this.log.error( "Error while setting default input: %s", error);
 								}
