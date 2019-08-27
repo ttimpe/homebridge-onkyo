@@ -76,14 +76,19 @@ class OnkyoAccessory {
 		this.mapVolume100 = config['map_volume_100'] || false;
 
 		this.buttons = {
-			[Characteristic.RemoteKey.ARROW_UP]: 'up',
-			[Characteristic.RemoteKey.ARROW_DOWN]: 'down',
-			[Characteristic.RemoteKey.ARROW_LEFT]: 'left',
-			[Characteristic.RemoteKey.ARROW_RIGHT]: 'right',
-			[Characteristic.RemoteKey.SELECT]: 'enter',
-			[Characteristic.RemoteKey.BACK]: 'exit',
-			[Characteristic.RemoteKey.EXIT]: 'exit',
-			[Characteristic.RemoteKey.INFORMATION]: 'home',
+			[Characteristic.RemoteKey.REWIND]: 'rew',
+			[Characteristic.RemoteKey.FAST_FORWARD]: 'ff',
+			[Characteristic.RemoteKey.NEXT_TRACK]: 'skip-f',
+			[Characteristic.RemoteKey.PREVIOUS_TRACK]: 'skip-r',
+			[Characteristic.RemoteKey.ARROW_UP]: 'up', // 4
+			[Characteristic.RemoteKey.ARROW_DOWN]: 'down', // 5
+			[Characteristic.RemoteKey.ARROW_LEFT]: 'left', // 6
+			[Characteristic.RemoteKey.ARROW_RIGHT]: 'right', // 7
+			[Characteristic.RemoteKey.SELECT]: 'enter', // 8
+			[Characteristic.RemoteKey.BACK]: 'exit', // 9
+			[Characteristic.RemoteKey.EXIT]: 'exit', // 10
+			[Characteristic.RemoteKey.PLAY_PAUSE]: 'play', // 11
+			[Characteristic.RemoteKey.INFORMATION]: 'home', // 15
 		};
 
 		this.state = false;
@@ -138,7 +143,7 @@ class OnkyoAccessory {
 		} else {
 			this.tvService = this.createTvService();
 			this.enabledServices.push(this.tvService);
-			// this.createTvSpeakerService(television);
+			this.createTvSpeakerService(this.tvService);
 			this.enabledServices.push(...this.addSources(this.tvService));
 		}
 	}
@@ -745,6 +750,7 @@ class OnkyoAccessory {
 	}
 	
 	remoteKeyPress(button, callback) {
+		this.log.info(button);
 		//do the callback immediately, to free homekit
 		//have the event later on execute changes
 		callback(null, button);
@@ -753,7 +759,7 @@ class OnkyoAccessory {
 			this.log.debug("remoteKeyPress - INPUT: pressing key %s", press);
 			this.eiscp.command(this.zone + "." + "setup=" + press, function( error, data) {
 				if (error) {
-					this.i_state = 1;
+					// this.i_state = 1;
 					this.log.error( "remoteKeyPress - INPUT: ERROR pressing button %s", press);
 				}
 			}.bind(this) );
