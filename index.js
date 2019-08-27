@@ -89,7 +89,7 @@ class OnkyoAccessory {
 		this.state = false;
 		this.m_state = false;
 		this.v_state = 0;
-		this.i_state = "10";
+		this.i_state = 1;
 		this.configured_inputs = [];
 		this.interval = parseInt(this.poll_status_interval);
 		this.avrManufacturer = "Onkyo";
@@ -130,17 +130,17 @@ class OnkyoAccessory {
 		this.createRxInput();
 		this.polling(this);
 
+		const infoService = this.createAccessoryInformationService();
+		this.enabledServices.push(infoService);
 		// this.log(infoService)
 		if (this.switch_service) {
 			this.createSwitchService();
 		} else {
-			var television = this.createTvService();
+			const television = this.createTvService();
 			this.enabledServices.push(television);
 			// this.createTvSpeakerService(television);
+			this.enabledServices.push(...this.addSources(television));
 		}
-		const infoService = this.createAccessoryInformationService();
-		this.enabledServices.push(infoService);
-
 	}
 
 	getServices() {
@@ -301,12 +301,12 @@ class OnkyoAccessory {
 				input = input.substring(0,input.indexOf(','));
 			}
 			// Convert to i_state input code
-			for (var a in RxInputs.Inputs) {
-				if (RxInputs.Inputs[a].label == input) {
-					this.i_state = RxInputs.Inputs[a].code;
-					break;
-				}
-			}
+			const index = 
+				input !== null
+				? RxInputs.Inputs.findIndex(i => i.label == input)
+				: -1;
+			this.i_state = index + 1;
+
 			this.log.info("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
 
 			//Communicate status
@@ -714,13 +714,10 @@ class OnkyoAccessory {
 		// 		break;
 		// 	}
 		// }
+
 		this.i_state = source;
-		var label;
-		RxInputs["Inputs"].forEach((input, i) => {
-			if (input["code"] == this.i_state) {
-				label = input["label"];
-			}
-		})
+		const label = RxInputs.Inputs[this.i_state - 1].label;
+
 		this.log.info(this.i_state);
 		this.log.info("setInputState - actual mode, ACTUAL input i_state: %s - label: %s", this.i_state, label);
 	
@@ -767,33 +764,64 @@ class OnkyoAccessory {
 	////////////////////////
 	addSources(service) {
 		// If input name mappings are provided, use them.
-		RxInputs['Inputs'].forEach((i, x) =>  {
+		const inputs = RxInputs['Inputs'].map((i, index) => {
+			const hapId = index + 1;
 			var inputName = i['label'];
 			if (this.inputs) {
 				if (this.inputs[i['label']]) {
 					inputName = this.inputs[i['label']];		
 				}
 			}
-			var dupe = false;
-			this.configured_inputs.forEach((y, z) => {
-				if (y['subtype'] == i['code']) {
-					dupe = true;
-				}
-			})
+			// var dupe = false;
+			// inputs.forEach((y, z) => {
+			// 	if (y['subtype'] == i['code']) {
+			// 		dupe = true;
+			// 	}
+			// })
 
-			if (dupe) return
+			// if (dupe) return
+			const input = this.setupInput(i.code, inputName, hapId, service);
 
-			let tmpInput = new Service.InputSource(inputName, i['code']);
-			tmpInput
-				.setCharacteristic(Characteristic.Identifier, i['code'])
-				.setCharacteristic(Characteristic.ConfiguredName, inputName)
-				.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
-			service.addLinkedService(tmpInput);
-			this.configured_inputs.push(tmpInput);
-			this.enabledServices.push(tmpInput);
-		})
+			
+			
+  
+			return input;
+		});
+	  
+		return inputs;
+	}
+
+	// setupInputs(television) {
+	// 	const inputs = this.inputs.map((config, index) => {
+	// 	  const hapId = index + 1;
+	// 	  const input = this.setupInput(config.id, config.name, hapId, television);
+
+	// 	  return input;
+	// 	});
 	
+	// 	return inputs;
+	//   }
+
+	setupInput(inputCode, name, hapId, television) {	
+		const input = new Service.InputSource(`${this.name} ${name}`, inputCode);
+		// const hdmiRegexp = /tvinput\.hdmi\d+/m;
+		const inputSourceType = Characteristic.InputSourceType.HDMI
+
+		input
+			.setCharacteristic(Characteristic.Identifier, hapId)
+			.setCharacteristic(Characteristic.ConfiguredName, name)
+			.setCharacteristic(
+			Characteristic.IsConfigured,
+			Characteristic.IsConfigured.CONFIGURED
+			)
+			.setCharacteristic(Characteristic.InputSourceType, inputSourceType);
+
+		input.getCharacteristic(Characteristic.ConfiguredName).setProps({
+			perms: [Characteristic.Perms.READ]
+		});
+
+		television.addLinkedService(input);
+		return input;
 	}
 
 	createAccessoryInformationService() {
@@ -845,47 +873,47 @@ class OnkyoAccessory {
 		}
 	}
 
-	createTvService() {
-		this.log.debug("Creating TV service for receiver %s", this.name)
-		const tvService = new Service.Television(this.name);
+	// createTvService() {
+	// 	this.log.debug("Creating TV service for receiver %s", this.name)
+	// 	const tvService = new Service.Television(this.name);
 
-		this.addSources(tvService)
+	// 	this.addSources(tvService)
 
-		tvService
-			.setCharacteristic(Characteristic.ConfiguredName, this.name);
-			// .setProps({
-			// 	perms: [Characteristic.Perms.READ]
-			// });
+	// 	tvService
+	// 		.setCharacteristic(Characteristic.ConfiguredName, this.name);
+	// 		// .setProps({
+	// 		// 	perms: [Characteristic.Perms.READ]
+	// 		// });
 		
-		tvService
-			.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+	// 	tvService
+	// 		.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 		
-		tvService
-			.getCharacteristic(Characteristic.Active)
-			.on('get', this.getPowerState.bind(this))
-			.on('set', this.setPowerState.bind(this));
+	// 	tvService
+	// 		.getCharacteristic(Characteristic.Active)
+	// 		.on('get', this.getPowerState.bind(this))
+	// 		.on('set', this.setPowerState.bind(this));
 
-		// this.tvService
-		// 	.getCharacteristic(Characteristic.On)
-		// 	.on('get', this.getPowerState.bind(this))
-		// 	.on('set', this.setPowerState.bind(this));
+	// 	// this.tvService
+	// 	// 	.getCharacteristic(Characteristic.On)
+	// 	// 	.on('get', this.getPowerState.bind(this))
+	// 	// 	.on('set', this.setPowerState.bind(this));
 
-		tvService
-			.getCharacteristic(Characteristic.ActiveIdentifier)
-			.on('set', this.setInputSource.bind(this))
-			.on('get', this.getInputSource.bind(this));
+	// 	tvService
+	// 		.getCharacteristic(Characteristic.ActiveIdentifier)
+	// 		.on('set', this.setInputSource.bind(this))
+	// 		.on('get', this.getInputSource.bind(this));
 		
-		tvService
-			.getCharacteristic(Characteristic.RemoteKey)
-			.on('set', this.remoteKeyPress.bind(this));
+	// 	tvService
+	// 		.getCharacteristic(Characteristic.RemoteKey)
+	// 		.on('set', this.remoteKeyPress.bind(this));
 			
-		// this.enabledServices.push(this.tvService);
-		// if (this.volume_dimmer) {
-		// 	this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
-		// 	this.createVolumeDimmer(this.tvService);
-		// }
-		return tvService;
-	}
+	// 	// this.enabledServices.push(this.tvService);
+	// 	// if (this.volume_dimmer) {
+	// 	// 	this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
+	// 	// 	this.createVolumeDimmer(this.tvService);
+	// 	// }
+	// 	return tvService;
+	// }
 	
 	// createTvSpeakerService(television) {
 	// 	var tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume');
@@ -935,6 +963,47 @@ class OnkyoAccessory {
 		this.enabledServices.push(this.dimmer);
 	}
 
+}
+
+OnkyoAccessory.prototype.createTvService = function() {
+	this.log.debug("Creating TV service for receiver %s", this.name)
+	const tvService = new Service.Television(this.name);
+
+	tvService
+		.getCharacteristic(Characteristic.ConfiguredName)
+		.setValue(this.name)
+		.setProps({
+			perms: [Characteristic.Perms.READ]
+		});
+	
+	tvService
+		.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+	
+	tvService
+		.getCharacteristic(Characteristic.Active)
+		.on('get', this.getPowerState.bind(this))
+		.on('set', this.setPowerState.bind(this));
+
+	// this.tvService
+	// 	.getCharacteristic(Characteristic.On)
+	// 	.on('get', this.getPowerState.bind(this))
+	// 	.on('set', this.setPowerState.bind(this));
+
+	tvService
+		.getCharacteristic(Characteristic.ActiveIdentifier)
+		.on('set', this.setInputSource.bind(this))
+		.on('get', this.getInputSource.bind(this));
+	
+	tvService
+		.getCharacteristic(Characteristic.RemoteKey)
+		.on('set', this.remoteKeyPress.bind(this));
+		
+	// this.enabledServices.push(this.tvService);
+	// if (this.volume_dimmer) {
+	// 	this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
+	// 	this.createVolumeDimmer(this.tvService);
+	// }
+	return tvService;
 }
 
 OnkyoAccessory.prototype.createTvSpeakerService = function(tvService) {
