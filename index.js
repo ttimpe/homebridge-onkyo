@@ -89,8 +89,8 @@ class OnkyoAccessory {
 		this.state = false;
 		this.m_state = false;
 		this.v_state = 0;
-		this.i_state = 1;
-		this.configured_inputs = [];
+		this.i_state = null;
+		// this.configured_inputs = [];
 		this.interval = parseInt(this.poll_status_interval);
 		this.avrManufacturer = "Onkyo";
 		this.avrSerial = config["serial"] || this.ip_address;
@@ -136,10 +136,10 @@ class OnkyoAccessory {
 		if (this.switch_service) {
 			this.createSwitchService();
 		} else {
-			const television = this.createTvService();
-			this.enabledServices.push(television);
+			this.tvService = this.createTvService();
+			this.enabledServices.push(this.tvService);
 			// this.createTvSpeakerService(television);
-			this.enabledServices.push(...this.addSources(television));
+			this.enabledServices.push(...this.addSources(this.tvService));
 		}
 	}
 
@@ -314,16 +314,19 @@ class OnkyoAccessory {
 			// 	this.tvService.setCharacteristic(RxTypes.InputLabel,input);
 			// 	this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
 			// }
-			this.getInputSource.bind(this);
 		} else {
 			// Then invalid Input chosen
 			this.log.error("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
 
 			//Update input label status
-			if (this.tvService ) {
-				this.tvService.setCharacteristic(RxTypes.InputLabel,"INVALID");
-			}
+			// if (this.tvService ) {
+			// 	this.i_state = 1;
+			// 	// this.tvService.setCharacteristic(RxTypes.InputLabel,"INVALID");
+			// 	this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state, null, "eventInput");
+			// }
 		}
+		this.getInputSource.bind(this);
+		// this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state, null, "eventInput");
 	}
 
 	eventVolume(response) {
@@ -395,15 +398,19 @@ class OnkyoAccessory {
 
 						// Handle defaultInput being either a custom label or manufacturer label
 						var label = this.defaultInput;
-						this.configured_inputs.forEach((input, i) => {
-							if (input["displayName"] == this.defaultInput) {
-								RxInputs["Inputs"].forEach((x, y) => {
-									if (x["code"] == input["subtype"]) {
-										label = x["label"];
-									}
-								})
+						if (this.inputs) {
+							for (var id in this.inputs) {
+								if (this.inputs[id] == this.defaultInput) {
+									label = id
+								}
 							}
-						})
+						}
+						const index = 
+							label !== null
+							? RxInputs.Inputs.findIndex(i => i.label == label)
+							: -1;
+						this.i_state = index + 1;
+						
 						if (powerOn && label) {
 							this.log.info("Setting default input selector to "+label);
 							this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "="+label, function(error, response) {
@@ -670,6 +677,7 @@ class OnkyoAccessory {
 		//do the callback immediately, to free homekit
 		//have the event later on execute changes
 		callback(null, this.i_state);
+		
 		this.log.info("getInputState - actual mode, return i_state: ", this.i_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "=query", function( error, data) {
 			if (error) {
@@ -739,7 +747,7 @@ class OnkyoAccessory {
 	remoteKeyPress(button, callback) {
 		//do the callback immediately, to free homekit
 		//have the event later on execute changes
-		callback(null, this.i_state);
+		callback(null, button);
 		if (this.buttons[button]) {
 			var press = this.buttons[button]
 			this.log.debug("remoteKeyPress - INPUT: pressing key %s", press);
