@@ -11,51 +11,53 @@ var info = require('./package.json');
 
 let RxTypes = require('./RxTypes.js');
 
-class OnkyoPlatform {
-	constructor(log, config, api) {
-		this.api = api;
-		this.config = config;
-		this.log = log;
-		this.receivers = this.config['receivers'];
-		this.receiverAccessories = [];
+// class OnkyoPlatform {
+// 	constructor(log, config, api) {
+// 		this.api = api;
+// 		this.config = config;
+// 		this.log = log;
+// 		this.receivers = this.config['receivers'];
+// 		this.receiverAccessories = [];
 
-		this.createAccessories(this, this.receivers);
-	}
+// 		this.createAccessories(this, this.receivers);
+// 	}
 
-	createAccessories(platform, receivers) {
-		platform.numberReceivers = platform.receivers.length;
-		platform.log.debug("Creating %s receivers...", platform.numberReceivers);
+// 	createAccessories(platform, receivers) {
+// 		platform.numberReceivers = platform.receivers.length;
+// 		platform.log.debug("Creating %s receivers...", platform.numberReceivers);
 	
-		receivers.forEach(function(receiver) {
-			var accessory = new OnkyoAccessory(platform, receiver);
-			platform.receiverAccessories.push(accessory);
-		})
-	}
+// 		receivers.forEach(function(receiver) {
+// 			var accessory = new OnkyoAccessory(platform, receiver);
+// 			platform.receiverAccessories.push(accessory);
+// 		})
+// 	}
 
-	accessories (callback) {
-		callback(this.receiverAccessories);
-	}
-}
+// 	accessories (callback) {
+// 		callback(this.receiverAccessories);
+// 	}
+// }
 
 
 class OnkyoAccessory {	
-	constructor (platform, receiver) {
-		this.platform = platform;
-		this.log = platform.log;
+	// constructor (platform, receiver) {
+	// 	this.platform = platform;
+	//	this.log = platform.log;
+	constructor(log, config) {
+		this.log = log;
 
 		this.eiscp = require('eiscp');
 		this.setAttempt = 0;
 		this.enabledServices = [];
 
-		const config = receiver;
-		this.name = config["name"];
-		this.ip_address	= config["ip_address"];
-		this.model = config["model"];
-		this.zone = config["zone"] || "main";
-		this.inputs = config["inputs"];
-		this.volume_dimmer = config["volume_dimmer"] || false;
-		this.switch_service = config["switch_service"] || false;
-
+		// const config = receiver;
+		this.config = config;
+		this.name = this.config["name"];
+		this.ip_address	= this.config["ip_address"];
+		this.model = this.config["model"];
+		this.zone = this.config["zone"] || "main";
+		this.inputs = this.config["inputs"];
+		this.volume_dimmer = this.config["volume_dimmer"] || false;
+		this.switch_service = this.config["switch_service"] || false;
 
 		this.cmdMap = new Array();
 		this.cmdMap["main"] = new Array();
@@ -69,11 +71,11 @@ class OnkyoAccessory {
 		this.cmdMap["zone2"]["muting"] = "muting";
 		this.cmdMap["zone2"]["input"] = "selector";
 
-		this.poll_status_interval = config["poll_status_interval"] || "0";
-		this.defaultInput = config["default_input"];
-		this.defaultVolume = config['default_volume'];
-		this.maxVolume = config['max_volume'] || 30;
-		this.mapVolume100 = config['map_volume_100'] || false;
+		this.poll_status_interval = this.config["poll_status_interval"] || "0";
+		this.defaultInput = this.config["default_input"];
+		this.defaultVolume = this.config['default_volume'];
+		this.maxVolume = this.config['max_volume'] || 30;
+		this.mapVolume100 = this.config['map_volume_100'] || false;
 
 		this.buttons = {
 			[Characteristic.RemoteKey.REWIND]: 'rew',
@@ -95,20 +97,9 @@ class OnkyoAccessory {
 		this.m_state = false;
 		this.v_state = 0;
 		this.i_state = null;
-		// this.configured_inputs = [];
 		this.interval = parseInt(this.poll_status_interval);
 		this.avrManufacturer = "Onkyo";
-		this.avrSerial = config["serial"] || this.ip_address;
-
-		// this.eiscp.discover(function(err,result){
-		// 	if(err) {
-		// 		this.log.debug("Onkyo - ERROR - No RX found. Result: %s", result);
-		//    } else {
-		// 		this.log.debug("Onkyo - Found these receivers on the local network. Connecting to first...");
-		// 		this.log.debug(result);
-		// 		this.avrSerial = result[0].mac;
-		//    }
-		// });
+		this.avrSerial = this.config["serial"] || this.ip_address;
 
 		this.switchHandling = "check";
 		if (this.interval > 10 && this.interval < 100000) {
@@ -313,25 +304,11 @@ class OnkyoAccessory {
 			this.i_state = index + 1;
 
 			this.log.info("eventInput - message: %s - new i_state: %s - input: %s", response, this.i_state, input);
-
-			//Communicate status
-			// if (this.tvService ) {
-			// 	this.tvService.setCharacteristic(RxTypes.InputLabel,input);
-			// 	this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
-			// }
 		} else {
 			// Then invalid Input chosen
 			this.log.error("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
-
-			//Update input label status
-			// if (this.tvService ) {
-			// 	this.i_state = 1;
-			// 	// this.tvService.setCharacteristic(RxTypes.InputLabel,"INVALID");
-			// 	this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state, null, "eventInput");
-			// }
 		}
 		this.getInputSource.bind(this);
-		// this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state, null, "eventInput");
 	}
 
 	eventVolume(response) {
@@ -465,9 +442,6 @@ class OnkyoAccessory {
 			if (error) {
 				this.state = false;
 				this.log.debug( "getPowerState - PWR QRY: ERROR - current state: %s", this.state);
-				if (this.tvService ) {
-					this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state, null, "statuspoll");
-				}
 			}
 		}.bind(this) );
 	}
@@ -496,9 +470,6 @@ class OnkyoAccessory {
 			if (error) {
 				this.v_state = 0;
 				this.log.debug( "getVolumeState - VOLUME QRY: ERROR - current v_state: %s", this.v_state);
-				if (this.tvService ) {
-					this.tvService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state, null, "v_statuspoll");
-				}
 			}
 		}.bind(this) );
 	}
@@ -542,9 +513,6 @@ class OnkyoAccessory {
 			if (error) {
 				this.v_state = 0;
 				this.log.debug( "setVolumeState - VOLUME : ERROR - current v_state: %s", this.v_state);
-				if (this.switchService ) {
-					this.switchService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state, null, "v_statuspoll");
-				}
 			}
 		}.bind(this) );
 	}
@@ -612,9 +580,6 @@ class OnkyoAccessory {
 			if (error) {
 				this.m_state = false;
 				this.log.debug( "getMuteState - MUTE QRY: ERROR - current m_state: %s", this.m_state);
-				if (this.tvService ) {
-					this.tvService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state, null, "m_statuspoll");
-				}
 			}
 		}.bind(this) );
 	}
@@ -644,9 +609,6 @@ class OnkyoAccessory {
 				if (error) {
 					this.m_state = false;
 					this.log.error( "setMuteState - MUTE ON: ERROR - current m_state: %s", this.m_state);
-					if (this.tvService ) {
-						this.tvService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state, null, "m_statuspoll");
-					}
 				}
 			}.bind(this) );
 		} else {
@@ -655,9 +617,6 @@ class OnkyoAccessory {
 				if (error) {
 					this.m_state = false;
 					this.log.error( "setMuteState - MUTE OFF: ERROR - current m_state: %s", this.m_state);
-					if (this.tvService ) {
-						this.tvService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state, null, "m_statuspoll");
-					}
 				}
 			}.bind(this) );
 		}
@@ -688,10 +647,6 @@ class OnkyoAccessory {
 			if (error) {
 				this.i_state = 1;
 				this.log.error( "getInputState - INPUT QRY: ERROR - current i_state: %s", this.i_state);
-				if (this.tvService ) {
-					this.tvService.setCharacteristic(RxTypes.InputLabel,"get error")
-					this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
-				}
 			}
 		}.bind(this) );
 	}
@@ -722,10 +677,6 @@ class OnkyoAccessory {
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + ":" + label, function(error, response) {
 			if (error) {
 				this.log.error( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", this.i_state, source.toString());
-				if (this.tvService ) {
-					this.tvService.setCharacteristic(RxTypes.InputLabel,"set error")
-					this.tvService.getCharacteristic(RxTypes.InputSource).updateValue(this.i_state, null, "i_statuspoll");
-				}
 			}
 		}.bind(this) );
 	}
@@ -891,11 +842,6 @@ class OnkyoAccessory {
 			.on('get', this.getPowerState.bind(this))
 			.on('set', this.setPowerState.bind(this));
 	
-		// this.tvService
-		// 	.getCharacteristic(Characteristic.On)
-		// 	.on('get', this.getPowerState.bind(this))
-		// 	.on('set', this.setPowerState.bind(this));
-	
 		tvService
 			.getCharacteristic(Characteristic.ActiveIdentifier)
 			.on('set', this.setInputSource.bind(this))
@@ -905,11 +851,10 @@ class OnkyoAccessory {
 			.getCharacteristic(Characteristic.RemoteKey)
 			.on('set', this.remoteKeyPress.bind(this));
 			
-		// this.enabledServices.push(this.tvService);
-		// if (this.volume_dimmer) {
-		// 	this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
-		// 	this.createVolumeDimmer(this.tvService);
-		// }
+		if (this.volume_dimmer) {
+			this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
+			this.createVolumeDimmer(this.tvService);
+		}
 		return tvService;
 	}
 
@@ -937,76 +882,9 @@ class OnkyoAccessory {
 
 }
 
-// OnkyoAccessory.prototype.createTvService = function() {
-// 	this.log.debug("Creating TV service for receiver %s", this.name)
-// 	const tvService = new Service.Television(this.name);
-
-// 	tvService
-// 		.getCharacteristic(Characteristic.ConfiguredName)
-// 		.setValue(this.name)
-// 		.setProps({
-// 			perms: [Characteristic.Perms.READ]
-// 		});
-	
-// 	tvService
-// 		.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
-	
-// 	tvService
-// 		.getCharacteristic(Characteristic.Active)
-// 		.on('get', this.getPowerState.bind(this))
-// 		.on('set', this.setPowerState.bind(this));
-
-// 	// this.tvService
-// 	// 	.getCharacteristic(Characteristic.On)
-// 	// 	.on('get', this.getPowerState.bind(this))
-// 	// 	.on('set', this.setPowerState.bind(this));
-
-// 	tvService
-// 		.getCharacteristic(Characteristic.ActiveIdentifier)
-// 		.on('set', this.setInputSource.bind(this))
-// 		.on('get', this.getInputSource.bind(this));
-	
-// 	tvService
-// 		.getCharacteristic(Characteristic.RemoteKey)
-// 		.on('set', this.remoteKeyPress.bind(this));
-		
-// 	// this.enabledServices.push(this.tvService);
-// 	// if (this.volume_dimmer) {
-// 	// 	this.log.debug("Creating Dimmer service linked to TV for receiver %s", this.name)
-// 	// 	this.createVolumeDimmer(this.tvService);
-// 	// }
-// 	return tvService;
-// }
-
-// OnkyoAccessory.prototype.createTvSpeakerService = function(tvService) {
-
-//     this.tvSpeakerService = new Service.TelevisionSpeaker(this.name + ' Volume', 'tvSpeakerService');
-//     this.tvSpeakerService
-//         .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
-//         .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
-//     this.tvSpeakerService
-//         .getCharacteristic(Characteristic.VolumeSelector)
-//         .on('set', this.setVolumeRelative.bind(this));
-//     this.tvSpeakerService
-//         .getCharacteristic(Characteristic.Mute)
-//         .on('get', this.getMuteState.bind(this))
-//         .on('set', this.setMuteState.bind(this));
-//     this.tvSpeakerService
-//         .addCharacteristic(Characteristic.Volume)
-//         .on('get', this.getVolumeState.bind(this))
-// 		.on('set', this.setVolumeState.bind(this));
-
-//     tvService.addLinkedService(this.tvSpeakerService);
-//     this.enabledServices.push(this.tvSpeakerService);
-
-// };
 
 module.exports = (homebridge) =>
 {
-//   Service = homebridge.hap.Service;
-//   Characteristic = homebridge.hap.Characteristic;
-//   Accessory = homebridge.platformAcessory;
-//   UUIDGen = homebridge.hap.uuid;
   ({ Service, Characteristic } = homebridge.hap);
-  homebridge.registerPlatform("homebridge-onkyo", "Onkyo", OnkyoPlatform);
+  homebridge.registerAccessory("homebridge-onkyo", "Onkyo", OnkyoAccessory);
 }
