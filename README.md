@@ -11,7 +11,7 @@ Existing users of my original fork or gw-wiscon's be sure to update the "platfor
 
 # Changelog
 
-* Verison 0.7 By default, changes accessory from a Switch to new TV accessory in iOS 12.2+. Input labels can customized with `inputs` in the config. To use the legacy Switch service (i.e. if you haven't upgraded to 12.2+ yet), add `"switch_service": true` to your receiver in config. An optional Dimmer service for separate volume control is available, useful for non-iPhone control and more advanced automations (it appears as a dimmable light bulb). To use, add `"volume_dimmer": true` to your receiver in config.
+* Verison 0.7 iOS 12.2+ is now required. This is now a Platform, theoretically supporting multiple receivers. Each receiver is a TV accessory (which is why iOS 12.2+ is required). Input labels can customized with `inputs` in the config. An optional Dimmer service for separate volume control is available, useful for non-iPhone control and more advanced automations (it appears as a dimmable light bulb). To disable the volume dimmer, add `"volume_dimmer": false` to your receiver in config.
 * Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
 * Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
 * Version 0.4.x includes support for volume, mute, and has options for setting default_input.
@@ -39,30 +39,37 @@ For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples dir
 
 Example accessory config (needs to be added to the homebridge config.json):
  ```
-"accessories": [{
-        "accessory": "Onkyo",
-		"model": "TX-NR609",
-		"ip_address": "10.0.0.46",
-		"poll_status_interval": "30",
-		"name": "Receiver",
-		"inputs": {
-			"dvd": "Blu-ray",
-			"video2": "Switch",
-			"video3": "Wii U",
-			"video6": "Apple TV",
-			"video4": "AUX",
-			"cd": "TV/CD"
-		},
-		"volume_dimmer": false,
-		"switch_service": false,
-		"filter_inputs": true
+"platforms": [{
+        "platform": "Onkyo",
+        "receivers": [
+            {
+                "model": "TX-NR609",
+                "ip_address": "10.0.0.46",
+                "poll_status_interval": "3000",
+                "name": "Receiver",
+                "inputs": {
+                    "dvd": "Blu-ray",
+                    "video2": "Switch",
+                    "video3": "Wii U",
+                    "video6": "Apple TV",
+                    "video4": "AUX",
+                    "cd": "TV/CD"
+                },
+                "volume_dimmer": false,
+                "switch_service": false,
+                "filter_inputs": true
+            }
+        ]
     }]
  ```
 ### Config Explanation:
 
 Field           			| Description
 ----------------------------|------------
-**accessory**   			| (required) Must always be "Onkyo".
+**platform**   			| (required) Must always be "Onkyo".
+**receivers**               | (required) List of receiver accessories to create. Must contain at least 1.
+Receiver Attributes         |
+----------------------------|------------
 **name**					| (required) The name you want to use for control of the Onkyo accessories.
 **ip_address**  			| (required) The internal ip address of your Onkyo.
 **model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.json file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
@@ -74,5 +81,4 @@ Field           			| Description
 **zone**              		| (optional) Defaults to main. Optionally control zone2 where supported.
 **inputs**					| (optional) List of inputs you want populated for the TV service and what you want them to be labeled. Inputs not listed are omitted.
 **filter_inputs**                   | (optional) Boolean value. Setting this to `true` limits inputs displayed in HomeKit to those you provide in `inputs`. If `false` or not defined, all inputs supported by `model` will be displayed.
-**volume_dimmer**					| (optional) Boolean value. Setting this to `true` enables additional Dimmer accessory for separate volume control.
-**switch_service**					| (optional) Boolean value. Setting this to `true` enables uses legacy Switch service instead of the new TV service.
+**volume_dimmer**					| (optional) Boolean value. Setting this to `false` disables additional Dimmer accessory for separate volume control.
