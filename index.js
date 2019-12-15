@@ -59,6 +59,9 @@ class OnkyoAccessory {
 		this.volume_dimmer = this.config["volume_dimmer"] || true;
 		this.filter_inputs = this.config["filter_inputs"] || false;
 
+		// debug log
+		this.log.debug(this.inputs);
+		
 		this.cmdMap = new Array();
 		this.cmdMap["main"] = new Array();
 		this.cmdMap["main"]["power"] = "system-power";
@@ -156,6 +159,7 @@ class OnkyoAccessory {
 		
 		
 		var eiscpData = eiscpData.commands.main.SLI.values;
+		this.log.debug(eiscpData);
 		var newobj = '{ "Inputs" : [';
 		for (var exkey in eiscpData) {
 			var hold = eiscpData[exkey].name.toString();
@@ -179,6 +183,7 @@ class OnkyoAccessory {
 		// Drop last comma first
 		newobj = newobj.slice(0,-1) + ']}';
 		RxInputs = JSON.parse(newobj);
+		this.log.debug(RxInputs);
 		if (this.filter_inputs) {
 			var length = RxInputs['Inputs'].length;
 			while(length--) {
@@ -758,6 +763,10 @@ class OnkyoAccessory {
 	addSources(service) {
 		// If input name mappings are provided, use them.
 		// Option to only configure specified inputs with filter_inputs
+		this.log.debug('logging in addSources()');
+		this.log.debug(RxInputs['Inputs']);
+		this.log.debug(this.inputs);
+		
 		if (this.filter_inputs) {
 			var length = RxInputs['Inputs'].length;
 			while(length--) {
