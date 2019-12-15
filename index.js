@@ -150,9 +150,10 @@ class OnkyoAccessory {
 	// Create the RxInput object for later use.
 		var eiscpData = require('./node_modules/eiscp/eiscp-commands.json');
 		var inSets = [];
+		this.log.info(`creating inSets for model: ${this.model}`);
 		for (set in eiscpData.modelsets) {
 			eiscpData.modelsets[set].forEach(model => {
-				if (model.includes("TX-NR609")) {
+				if (model.includes(this.model)) {
 					inSets.push(set);
 				}
 			});
