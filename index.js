@@ -59,10 +59,6 @@ class OnkyoAccessory {
 		this.volume_dimmer = this.config["volume_dimmer"] || true;
 		this.filter_inputs = this.config["filter_inputs"] || false;
 
-		// debug log
-		this.log.info('Creating OnkyoAccessory with receiver inputs:');
-		this.log.info(this.inputs);
-		
 		this.cmdMap = new Array();
 		this.cmdMap["main"] = new Array();
 		this.cmdMap["main"]["power"] = "system-power";
@@ -150,7 +146,6 @@ class OnkyoAccessory {
 	// Create the RxInput object for later use.
 		var eiscpData = require('./node_modules/eiscp/eiscp-commands.json');
 		var inSets = [];
-		this.log.info(`creating inSets for model: ${this.model}`);
 		for (set in eiscpData.modelsets) {
 			eiscpData.modelsets[set].forEach(model => {
 				if (model.includes(this.model)) {
@@ -161,8 +156,6 @@ class OnkyoAccessory {
 		
 		
 		var eiscpData = eiscpData.commands.main.SLI.values;
-		this.log.info('logging eiscpData in createRxInput()');
-		this.log.info(eiscpData);
 		var newobj = '{ "Inputs" : [';
 		for (var exkey in eiscpData) {
 			var hold = eiscpData[exkey].name.toString();
@@ -186,8 +179,6 @@ class OnkyoAccessory {
 		// Drop last comma first
 		newobj = newobj.slice(0,-1) + ']}';
 		RxInputs = JSON.parse(newobj);
-		this.log.info('logging RxInputs');
-		this.log.info(RxInputs);
 		if (this.filter_inputs) {
 			var length = RxInputs['Inputs'].length;
 			while(length--) {
@@ -767,11 +758,6 @@ class OnkyoAccessory {
 	addSources(service) {
 		// If input name mappings are provided, use them.
 		// Option to only configure specified inputs with filter_inputs
-		this.log.info('logging in addSources()');
-		this.log.info(RxInputs['Inputs']);
-		this.log.info('logging this.inputs');
-		this.log.info(this.inputs);
-		
 		if (this.filter_inputs) {
 			var length = RxInputs['Inputs'].length;
 			while(length--) {
