@@ -32,8 +32,9 @@ Ensure that the Onkyo receiver is controllable using the OnkyoRemote3 iOS app.
 For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples directory and see if you can run 3.js. "node 3.js". It should output all available commands.
 
 1. Install homebridge using: npm install -g homebridge
-2. Install this plugin using: npm install -g homebridge-onkyo
-3. Update your configuration file. See the sample below.
+2. Install git. eg: apt install git
+3. Install this plugin using: npm install -g homebridge-onkyo
+4. Update your configuration file. See the sample below.
 
 # Configuration
 
