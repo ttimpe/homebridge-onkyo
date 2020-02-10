@@ -1,6 +1,6 @@
 {
   "name": "homebridge-onkyo",
-  "version": "0.6.6",
+  "version": "0.7.3",
   "description": "Homebridge plugin for Onkyo Receivers",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/ToddGreenfield/homebridge-onkyo.git"
   },
   "dependencies": {
-    "eiscp": "git+https://github.com/tillbaks/node-eiscp.git",
+    "eiscp": "git://github.com/tillbaks/node-eiscp.git",
     "math-round": "^1.0.0",
     "polling-to-event": "^2.0.2",
     "request": "^2.69.0"
@@ -24,7 +24,7 @@
   ],
   "engines": {
     "node": ">=0.12.0",
-    "homebridge": ">=0.2.0"
+    "homebridge": ">=0.4.46"
   },
   "author": "gw-wiscon <gw.wiscon@gmail.com>",
   "license": "ISC",

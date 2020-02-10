@@ -1,6 +1,6 @@
 {
 	"pluginAlias": "Onkyo",
-	"pluginType": "accessory",
+	"pluginType": "platform",
 	"schema": {
 		"type": "object",
 		"properties": {
@@ -60,3 +60,4 @@
 	    }
     }
 }
+
