@@ -11,7 +11,8 @@ Existing users of my original fork or gw-wiscon's be sure to update the "platfor
 
 # Changelog
 
-* Verison 0.7 iOS 12.2+ is now required. This is now a Platform, theoretically supporting multiple receivers. Each receiver is a TV accessory (which is why iOS 12.2+ is required). Input labels can customized with `inputs` in the config. An optional Dimmer service for separate volume control is available, useful for non-iPhone control and more advanced automations (it appears as a dimmable light bulb). To disable the volume dimmer, add `"volume_dimmer": false` to your receiver in config.
+* Version 0.7.5 introduces linter check for JSON files and code quality check using xo. Developers can now use "npm test" before submitting a pull request.
+* Version 0.7 iOS 12.2+ is now required. This is now a Platform, theoretically supporting multiple receivers. Each receiver is a TV accessory (which is why iOS 12.2+ is required). Input labels can customized with `inputs` in the config. An optional Dimmer service for separate volume control is available, useful for non-iPhone control and more advanced automations (it appears as a dimmable light bulb). To disable the volume dimmer, add `"volume_dimmer": false` to your receiver in config.
 * Version 0.6 includes support for zone2. Adds a new config parameter called "zone" and use "zone2". Thanks for the contrib mbbeaubi.
 * Version 0.5.x includes support for input-selector. Available inputs are dynamically pulled from the eiscp-commands.json file. Note: Not all inputs may work with your receiver.
 * Version 0.4.x includes support for volume, mute, and has options for setting default_input.
@@ -50,14 +51,16 @@ Example accessory config (needs to be added to the homebridge config.json):
                 "default_input": "net",
                 "default_volume": "10",
                 "max_volume": "40",
-                "inputs": {
-                    "dvd": "Blu-ray",
-                    "video2": "Switch",
-                    "video3": "Wii U",
-                    "video6": "Apple TV",
-                    "video4": "AUX",
-                    "cd": "TV/CD"
-                },
+                "inputs": [
+                    {
+                        "input_name": "TV",
+                        "display_name": "TV"
+                    },
+                    {
+                        "input_name": "AUX",
+                        "display_name": "PS4"
+                    }
+                ]
                 "map_volume_100": false,
                 "volume_dimmer": false,
                 "switch_service": false,
