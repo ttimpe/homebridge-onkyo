@@ -79,7 +79,9 @@ class OnkyoAccessory {
 //
 
 		this.volume_dimmer = this.config.volume_dimmer || true;
+		this.log.debug('volume_dimmer: %s', this.volume_dimmer);
 		this.filter_inputs = this.config.filter_inputs || false;
+		this.log.debug('filter_inputs: %s', this.filter_inputs);
 
 		this.cmdMap = new Array(2);
 		this.cmdMap.main = new Array(4);
@@ -94,10 +96,15 @@ class OnkyoAccessory {
 		this.cmdMap.zone2.input = 'selector';
 
 		this.poll_status_interval = this.config.poll_status_interval || '0';
+		this.log.debug('poll_status_interval: %s', this.poll_status_interval);
 		this.defaultInput = this.config.default_input;
+		this.log.debug('defaultInput: %s', this.defaultInput);
 		this.defaultVolume = this.config.default_volume;
+		this.log.debug('defaultVolume: %s', this.defaultVolume);
 		this.maxVolume = this.config.max_volume || 60;
+		this.log.debug('maxVolume: %s', this.maxVolume);
 		this.mapVolume100 = this.config.map_volume_100 || true;
+		this.log.debug('mapVolume100: %s', this.mapVolume100);
 
 		this.buttons = {
 			[Characteristic.RemoteKey.REWIND]: 'rew',
@@ -122,7 +129,7 @@ class OnkyoAccessory {
 		this.interval = parseInt(this.poll_status_interval, 10);
 		this.avrManufacturer = 'Onkyo';
 		this.avrSerial = this.config.serial || this.ip_address;
-
+		this.log.debug('avrSerial: %s', this.avrSerial);
 		this.switchHandling = 'check';
 		if (this.interval > 10 && this.interval < 100000)
 			this.switchHandling = 'poll';

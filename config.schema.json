@@ -2,6 +2,12 @@
 	"pluginAlias": "Onkyo",
 	"pluginType": "platform",
 	"schema": {
+		"name": {
+			"title": "Name",
+			"type": "string",
+			"required": true,
+			"default": "Onkyo"
+		},
 		"receivers": {
       "type": "array",
       "items": {
