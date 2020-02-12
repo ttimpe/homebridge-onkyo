@@ -1,11 +1,11 @@
 {
   "name": "homebridge-onkyo",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "Homebridge plugin for Onkyo Receivers",
   "main": "index.js",
   "scripts": {
     "pretest": "eslint --ignore-path .gitignore package.json config.schema.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "xo"
   },
   "repository": {
     "type": "git",
@@ -37,5 +37,40 @@
   "bugs": {
     "url": "https://github.com/ToddGreenfield/homebridge-onkyo/issues"
   },
-  "homepage": "https://github.com/ToddGreenfield/homebridge-onkyo#readme"
+  "homepage": "https://github.com/ToddGreenfield/homebridge-onkyo#readme",
+  "xo": {
+    "space": false,
+    "rules": {
+      "camelcase": "off",
+      "kebabCase": "off",
+      "no-mixed-spaces-and-tabs": "warn",
+      "no-useless-escape": "warn",
+      "indent": "off",
+      "quotes": "warn",
+      "capitalized-comments": "off",
+      "no-var": "warn",
+      "prefer-destructuring": "off",
+      "prefer-arrow-callback": "warn",
+      "object-shorthand": [
+        "off",
+        "always",
+        {
+          "ignoreConstructors": true
+        }
+      ],
+      "quote-props": "error",
+      "no-unused-vars": "warn",
+      "curly": [
+        "error",
+        "multi-or-nest",
+        "consistent"
+      ],
+      "no-use-before-define": [
+        "error",
+        {
+          "classes": false
+        }
+      ]
+    }
+  }
 }

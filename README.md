@@ -47,6 +47,9 @@ Example accessory config (needs to be added to the homebridge config.json):
                 "ip_address": "10.0.0.46",
                 "poll_status_interval": "3000",
                 "name": "Receiver",
+                "default_input": "net",
+                "default_volume": "10",
+                "max_volume": "40",
                 "inputs": {
                     "dvd": "Blu-ray",
                     "video2": "Switch",
@@ -55,6 +58,7 @@ Example accessory config (needs to be added to the homebridge config.json):
                     "video4": "AUX",
                     "cd": "TV/CD"
                 },
+                "map_volume_100": false,
                 "volume_dimmer": false,
                 "switch_service": false,
                 "filter_inputs": true
