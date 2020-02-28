@@ -2,14 +2,15 @@
 
 let Service;
 let Characteristic;
-let Accessory;
+// let Accessory;
 let RxInputs;
 const pollingtoevent = require('polling-to-event');
 
-const accessories = [];
+// const accessories = [];
 const info = require('./package.json');
 
-const RxTypes = require('./rx-types.js');
+// Are we actually using rx-types.js anywhere?
+// const RxTypes = require('./rx-types.js');
 
 class OnkyoPlatform {
 	constructor(log, config, api) {
@@ -267,7 +268,8 @@ class OnkyoAccessory {
 		const that = platform;
 	// Status Polling
 		if (that.switchHandling === 'poll') {
-			const powerurl = that.status_url;
+			// somebody instroduced powerurl but we are never using it.
+			// const powerurl = that.status_url;
 			that.log.debug('start long poller..');
 	// PWR Polling
 			const statusemitter = pollingtoevent(done => {
