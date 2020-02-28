@@ -49,6 +49,7 @@ Example accessory config (needs to be added to the homebridge config.json):
                 "ip_address": "10.0.0.46",
                 "poll_status_interval": "3000",
                 "name": "Receiver",
+                "zone": "main",
                 "default_input": "net",
                 "default_volume": "10",
                 "max_volume": "40",
