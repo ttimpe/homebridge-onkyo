@@ -38,6 +38,13 @@
 						"required": false,
 						"default": "net"
 					},
+					"zone": {
+						"title": "Zone",
+						"type": "string",
+						"required": true,
+						"enum": ["main", "zone2", "zone3"],
+						"default": "main"
+					},
 					"default_volume": {
 						"title": "Default volume (optional)",
 						"type": "string",
