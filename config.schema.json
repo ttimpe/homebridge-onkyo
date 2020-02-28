@@ -75,10 +75,10 @@
 						"description": "Setting this to false disables switch service."
 					},
 					"filter_inputs": {
-						"title": "Enable switch service",
+						"title": "Filter inputs",
 						"type": "boolean",
 						"default": true,
-						"description": "Setting this to true limits inputs displayed in HomeKit to those you provide in inputs. If false or not defined, all inputs supported by model will be displayed."
+						"description": "Setting this to true limits inputs displayed in HomeKit to those you provide in inputs. If false or not defined, all inputs supported by model will be displayed.<br>If set to true, you MUST configure INPUTS."
 					},
 					"inputs" : {
 						"title": "Inputs",

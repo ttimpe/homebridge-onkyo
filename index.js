@@ -64,24 +64,45 @@ class OnkyoAccessory {
 		this.zone = this.config.zone || 'main';
 		this.log.debug('Zone %s', this.zone);
 
-//
-// 		this.inputs = this.config.inputs;
-//
-/* eslint no-return-assign: "warn" */
-		const array_input = {};
-		this.config.inputs.forEach(x => array_input[x.input_name] = x.display_name);
-// results in: inputs: { TV: 'TV', AUX: 'PS4' }
-		this.inputs = array_input;
-		this.log.debug('inputs: %s', this.inputs);
-//
-//
-//
-//
+		if (this.config.volume_dimmer === undefined) {
+			this.log.error('ERROR: Your configuration is missing the parameter "volume_dimmer". Assuming "false".');
+			this.volume_dimmer = false;
+		} else {
+			this.volume_dimmer = this.config.volume_dimmer;
+			this.log.debug('volume_dimmer: %s', this.volume_dimmer);
+		}
 
-		this.volume_dimmer = this.config.volume_dimmer || true;
-		this.log.debug('volume_dimmer: %s', this.volume_dimmer);
-		this.filter_inputs = this.config.filter_inputs || false;
-		this.log.debug('filter_inputs: %s', this.filter_inputs);
+		if (this.config.filter_inputs === undefined) {
+			this.log.error('ERROR: Your configuration is missing the parameter "filter_inputs". Assuming "false".');
+			this.filter_inputs = false;
+		} else {
+			this.filter_inputs = this.config.filter_inputs;
+			this.log.debug('filter_inputs: %s', this.filter_inputs);
+		}
+
+		//
+		// 		this.inputs = this.config.inputs;
+		//
+		/* eslint no-return-assign: "warn" */
+				const array_input = {};
+				if (this.config.inputs === undefined) {
+					this.log.warn('There are no INPUTS configured in the configuration.');
+					this.filter_inputs = false;
+					this.log.debug('Disabled filtering the inputs.');
+					// do something
+				} else if (this.config.inputs.isArray) {
+					this.log.debug('Configuration contains array.');
+					this.config.inputs.forEach(x => array_input[x.input_name] = x.display_name);
+					// results in: inputs: { TV: 'TV', AUX: 'PS4' }
+					this.inputs = array_input;
+					this.log.debug('inputs: %s', this.inputs);
+				} else {
+				this.log.warn('Configuration does not contain INPUT configuration.');
+				this.log('Continuing without INPUT select options.');
+				this.filter_inputs = false;
+			}
+
+			this.log.debug('Input filtering is finally %s', this.filter_inputs);
 
 		this.cmdMap = new Array(2);
 		this.cmdMap.main = new Array(4);
