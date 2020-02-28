@@ -27,14 +27,15 @@ For Alexa Control of Volume, Mute, Input - (if using the Alexa plugin) - create 
 
 # To Do
 
-Complete re-write to convert to a Platform. This will allow for auto discovery of all receivers (if more than one exist), and other flexibility.
+Auto discovery of all receivers on the network (if more than one exist) and other flexibility.
 Adding Speaker A/B on/off control
 Others...
 
 # Installation
 
-Ensure that the Onkyo receiver is controllable using the OnkyoRemote3 iOS app.
-For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples directory and see if you can run 3.js. "node 3.js". It should output all available commands.
+As a prerequisite ensure that the Onkyo receiver is controllable using the OnkyoRemote3 iOS app.
+
+It is recommended to install and configure this plugin using [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x#readme), however you can also install manually using the following manual tasks:
 
 1. Install homebridge using: npm install -g homebridge
 2. Install this plugin using: npm install -g homebridge-onkyo
@@ -94,3 +95,10 @@ Receiver Attributes         |
 **inputs**					| (optional) List of inputs you want populated for the TV service and what you want them to be labeled. Inputs not listed are omitted.
 **filter_inputs**                   | (optional) Boolean value. Setting this to `true` limits inputs displayed in HomeKit to those you provide in `inputs`. If `false` or not defined, all inputs supported by `model` will be displayed.
 **volume_dimmer**					| (optional) Boolean value. Setting this to `false` disables additional Dimmer accessory for separate volume control.
+
+
+# Troubleshooting
+
+For Troubleshooting look in the homebridge-onkyo/node_modules/eiscp/examples directory and see if you can run 3.js. "node 3.js". It should output all available commands.
+
+You can find the output also in the [wiki](https://github.com/ToddGreenfield/homebridge-onkyo/wiki/EISCP-output-of-3.js).
