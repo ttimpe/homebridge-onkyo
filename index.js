@@ -47,8 +47,13 @@ class OnkyoAccessory {
 	constructor(platform, receiver) {
 		this.platform = platform;
 		this.log = platform.log;
-	// constructor(log, config) {
-	// 	this.log = log;
+
+		this.log.info('**************************************************************');
+		this.log.info('  homebridge-onkyo version ' + info.version);
+		this.log.info('  GitHub: https://github.com/ToddGreenfield/homebridge-onkyo ');
+		this.log.info('**************************************************************');
+		this.log.info('start success...');
+		this.log.debug('Debug mode enabled');
 
 		this.eiscp = require('eiscp');
 		this.setAttempt = 0;
@@ -84,23 +89,23 @@ class OnkyoAccessory {
 		// 		this.inputs = this.config.inputs;
 		//
 		/* eslint no-return-assign: "warn" */
-				const array_input = {};
-				if (this.config.inputs === undefined) {
-					this.log.warn('There are no INPUTS configured in the configuration.');
+
+		const array_input = {};
+				if (typeof this.config.inputs === undefined) {
+					this.log.warn('There are no INPUTS configured in the configuration. This is OK if you have "filter_inputs" disabled.');
 					this.filter_inputs = false;
-					this.log.debug('Disabled filtering the inputs.');
-					// do something
-				} else if (this.config.inputs.isArray) {
-					this.log.debug('Configuration contains array.');
+					this.log.debug('Disabled filtering INPUTS.');
+				} else if (typeof this.config.inputs === 'object') {
+					this.log.debug('Configuration contains an INPUTS object.');
 					this.config.inputs.forEach(x => array_input[x.input_name] = x.display_name);
 					// results in: inputs: { TV: 'TV', AUX: 'PS4' }
 					this.inputs = array_input;
-					this.log.debug('inputs: %s', this.inputs);
+					this.log.debug('This is the list of INPUTS after converting from an object into an array: %s', this.inputs);
 				} else {
-				this.log.warn('Configuration does not contain INPUT configuration.');
-				this.log('Continuing without INPUT select options.');
-				this.filter_inputs = false;
-			}
+					this.log.warn('Configuration does not contain proper INPUTS configuration.');
+					this.log('Continuing without INPUTS filter option.');
+					this.filter_inputs = false;
+				}
 
 			this.log.debug('Input filtering is finally %s', this.filter_inputs);
 
