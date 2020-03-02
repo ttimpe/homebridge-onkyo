@@ -34,6 +34,7 @@ Others...
 # Installation
 
 As a prerequisite ensure that the Onkyo receiver is controllable using the OnkyoRemote3 iOS app.
+You also need to have [git](https://github.com/git/git) installed.
 
 It is recommended to install and configure this plugin using [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x#readme), however you can also install manually using the following manual tasks:
 
