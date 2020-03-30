@@ -11,7 +11,7 @@
     "url": "git+https://github.com/ToddGreenfield/homebridge-onkyo.git"
   },
   "dependencies": {
-    "eiscp": "git://github.com/tillbaks/node-eiscp.git",
+    "eiscp": "git://github.com/untitledlt/eiscp.js.git",
     "math-round": "^1.0.0",
     "polling-to-event": "^2.0.2",
     "request": "^2.69.0"
