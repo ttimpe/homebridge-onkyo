@@ -149,12 +149,11 @@ class OnkyoAccessory {
 			});
 		}
 		
-		
+		// Get list of commands from eiscpData
 		var eiscpData = eiscpData.commands.main.SLI.values;
+		// Create a JSON object for inputs from the eiscpData
 		var newobj = '{ "Inputs" : [';
-		this.log.info(eiscpData);
 		for (var exkey in eiscpData) {
-			this.log.info(exkey);
 			var hold = eiscpData[exkey].name.toString();
 			if (hold.includes(',')) {
 				hold = hold.substring(0,hold.indexOf(','));
@@ -188,16 +187,6 @@ class OnkyoAccessory {
 		// Drop last comma first
 		newobj = newobj.slice(0,-1) + ']}';
 		RxInputs = JSON.parse(newobj);
-		if (this.filter_inputs) {
-			var length = RxInputs['Inputs'].length;
-			while(length--) {
-				if (this.inputs[RxInputs['Inputs'][length].label]) {
-					continue
-				} else {
-					RxInputs['Inputs'].splice(length, 1);
-				}
-			}
-		}
 	}
 
 	polling(platform) {
@@ -218,9 +207,6 @@ class OnkyoAccessory {
 			statusemitter.on("statuspoll", function(data) {
 				that.state = data;
 				that.log.debug("event - PWR status poller - new state: ", that.state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(Characteristic.Active).updateValue(that.state, null, "statuspoll");
-				// }
 			});
 	// Audio-Input Polling
 			var i_statusemitter = pollingtoevent(function(done) {
@@ -234,9 +220,6 @@ class OnkyoAccessory {
 			i_statusemitter.on("i_statuspoll", function(data) {
 				that.i_state = data;
 				that.log.debug("event - INPUT status poller - new i_state: ", that.i_state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(that.i_state, null, "i_statuspoll");
-				// }
 			});
 	// Audio-Muting Polling
 			var m_statusemitter = pollingtoevent(function(done) {
@@ -250,9 +233,6 @@ class OnkyoAccessory {
 			m_statusemitter.on("m_statuspoll", function(data) {
 				that.m_state = data;
 				that.log.debug("event - MUTE status poller - new m_state: ", that.m_state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(Characteristic.Mute).updateValue(that.m_state, null, "m_statuspoll");
-				// }
 			});
 	// Volume Polling
 			var v_statusemitter = pollingtoevent(function(done) {
@@ -266,9 +246,6 @@ class OnkyoAccessory {
 			v_statusemitter.on("v_statuspoll", function(data) {
 				that.v_state = data;
 				that.log.debug("event - VOLUME status poller - new v_state: ", that.v_state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(Characteristic.Volume).updateValue(that.v_state, null, "v_statuspoll");
-				// }
 			});
 		}
 	}
@@ -295,14 +272,6 @@ class OnkyoAccessory {
 		}
 		this.state = (response == "on");
 		this.log.debug("eventSystemPower - message: %s, new state %s", response, this.state);
-		//Communicate status
-		// if (this.tvService ) {
-		// 	this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state, null, "statuspoll");
-		// }
-		// if (this.volume_dimmer) {
-		// 	this.m_state = !(response == "on");
-		// 	this.dimmer.getCharacteristic(Characteristic.On).updateValue((response == "on"), null, "power event m_status");
-		// }
 	}
 
 	eventAudioMuting(response) {
@@ -410,11 +379,13 @@ class OnkyoAccessory {
 						// Handle defaultInput being either a custom label or manufacturer label
 						var label = this.defaultInput;
 						if (this.inputs) {
-							for (var id in this.inputs) {
-								if (this.inputs[id] == this.defaultInput) {
-									label = id
+							this.inputs.forEach((input, x) => {
+								if (input['input'] == this.default) {
+									label = input['input']
+								} else if (input['label'] == this.defaultInput) {
+									label = input['label']
 								}
-							}
+							})
 						}
 						const index = 
 							label !== null
@@ -660,24 +631,19 @@ class OnkyoAccessory {
 	
 	getInputSource(callback, context) {
 		//if context is i_statuspoll, then we need to request the actual value
-		// if (!context || context != "i_statuspoll") {
-		// 	if (this.switchHandling == "poll") {
-		// 		this.log.debug("getInputState - polling mode, return i_state: ", this.i_state);
-		// 		callback(null, this.i_state);
-		// 		return;
-		// 	}
-		// }
+		if (!context || context != "i_statuspoll") {
+			if (this.switchHandling == "poll") {
+				this.log.debug("getInputState - polling mode, return i_state: ", this.i_state);
+				callback(null, this.i_state);
+				return;
+			}
+		}
 	
 		if (!this.ip_address) {
 			this.log.error("Ignoring request; No ip_address defined.");
 			callback(new Error("No ip_address defined."));
 			return;
 		}
-	
-		//do the callback immediately, to free homekit
-		//have the event later on execute changes
-		
-		
 		this.log.debug("getInputState - actual mode, return i_state: ", this.i_state);
 		this.eiscp.command(this.zone + "." + this.cmdMap[this.zone]["input"] + "=query", function( error, data) {
 			if (error) {
@@ -686,16 +652,15 @@ class OnkyoAccessory {
 			}
 		}.bind(this) );
 		callback(null, this.i_state);
-		// this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state);
 	}
 	
 	setInputSource(source, callback, context) {
 	//if context is i_statuspoll, then we need to ensure this we do not set the actual value
-		// if (context && context == "i_statuspoll") {
-		// 	this.log.info( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
-		// 	callback(null, this.i_state);
-		// 	return;
-		// }
+		if (context && context == "i_statuspoll") {
+			this.log.info( "setInputState - polling mode, ignore, i_state: %s", this.i_state);
+			callback(null, this.i_state);
+			return;
+		}
 		if (!this.ip_address) {
 			this.log.error("Ignoring request; No ip_address defined.");
 			callback(new Error("No ip_address defined."));
@@ -749,32 +714,25 @@ class OnkyoAccessory {
 		// If input name mappings are provided, use them.
 		// Option to only configure specified inputs with filter_inputs
 		if (this.filter_inputs) {
-			var length = RxInputs['Inputs'].length;
-			while(length--) {
-				if (this.inputs[RxInputs['Inputs'][length].label]) {
-					continue
-				} else {
-					RxInputs['Inputs'].splice(length, 1);
-				}
-			}
+			// Check the RxInput['Inputs'] items to see if each exists in this.inputs. Return new array of those that do.
+			RxInputs['Inputs'] = RxInputs['Inputs'].filter((rxinput) => {
+				return this.inputs.some((input) => {
+					return input['input'] == rxinput.label
+				})
+			})
 		}
 		this.log.debug(RxInputs['Inputs']);
+		// Create final array of inputs, using any labels defined in the config's inputs to override the default labels
 		const inputs = RxInputs['Inputs'].map((i, index) => {
 			const hapId = index + 1;
 			var inputName = i['label'];
 			if (this.inputs) {
-				if (this.inputs[i['label']]) {
-					inputName = this.inputs[i['label']];		
-				}
+				this.inputs.forEach((input, x) => {
+					if (input['input'] == i['label']) {
+						inputName = input['label'];		
+					}
+				})
 			}
-			// var dupe = false;
-			// inputs.forEach((y, z) => {
-			// 	if (y['subtype'] == i['code']) {
-			// 		dupe = true;
-			// 	}
-			// })
-
-			// if (dupe) return
 			const input = this.setupInput(i.code, inputName, hapId, service);
 			return input;
 		});
