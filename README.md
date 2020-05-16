@@ -72,7 +72,7 @@ Receiver Attributes         |
 ----------------------------|------------
 **name**					| (required) The name you want to use for control of the Onkyo accessories.
 **ip_address**  			| (required) The internal ip address of your Onkyo.
-**model**					| (required) Must be a valid model listed in node_modules/eiscp/eiscp-commands.json file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
+**model**					| (required) Must be a valid model listed in config.schema.json file. If your model is not listed, you can use the TX-NR609 if your model supports the Integra Serial Communication Protocol (ISCP).
 **poll_status_interval**  	| (optional) Poll Status Interval. Defaults to 0 or no polling.
 **default_input**  			| (optional) A valid source input. Default will use last known input. See output of 3.js in eiscp/examples for options.
 **default_volume**  		| (optional) Initial receiver volume upon powerup. This is the true volume number, not a percentage. Ignored if powerup from device knob or external app (like OnkyoRemote3).
