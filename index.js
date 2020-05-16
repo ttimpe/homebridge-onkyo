@@ -2,11 +2,9 @@
 
 let Service
 let Characteristic;
-let Accessory;
 var RxInputs;
 var pollingtoevent = require('polling-to-event');
 var round = require( 'math-round' );
-var accessories = [];
 var info = require('./package.json');
 
 let RxTypes = require('./RxTypes.js');
@@ -157,7 +155,9 @@ class OnkyoAccessory {
 		
 		var eiscpData = eiscpData.commands.main.SLI.values;
 		var newobj = '{ "Inputs" : [';
+		this.log.info(eiscpData);
 		for (var exkey in eiscpData) {
+			this.log.info(exkey);
 			var hold = eiscpData[exkey].name.toString();
 			if (hold.includes(',')) {
 				hold = hold.substring(0,hold.indexOf(','));
@@ -169,7 +169,19 @@ class OnkyoAccessory {
 			if (exkey.includes("UP") || exkey.includes("DOWN") || exkey.includes("QSTN")) {
 				continue
 			}
-			var set = eiscpData[exkey]['models']
+			// Work around specific bug for “26”
+			if (exkey === "“26”") {
+				exkey = "26";
+			}
+			if (exkey in eiscpData) {
+				if ('models' in eiscpData[exkey]){
+					var set = eiscpData[exkey]['models']
+				} else {
+					continue
+				}
+			} else {
+				continue
+			}
 			if (inSets.includes(set)) {
 				newobj = newobj + '{ "code":"'+exkey+'" , "label":"'+hold+'" },';
 			} else {
