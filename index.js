@@ -40,21 +40,18 @@ class OnkyoAccessory {
 	constructor (platform, receiver) {
 		this.platform = platform;
 		this.log = platform.log;
-	// constructor(log, config) {
-	// 	this.log = log;
 
 		this.eiscp = require('eiscp');
 		this.setAttempt = 0;
 		this.enabledServices = [];
 
 		this.config = receiver;
-		// this.config = config;
 		this.name = this.config["name"];
 		this.ip_address	= this.config["ip_address"];
 		this.model = this.config["model"];
 		this.zone = this.config["zone"] || "main";
 		this.inputs = this.config["inputs"];
-		this.volume_dimmer = this.config["volume_dimmer"] || true;
+		this.volume_dimmer = this.config["volume_dimmer"] || false;
 		this.filter_inputs = this.config["filter_inputs"] || false;
 
 		this.cmdMap = new Array();
@@ -201,25 +198,6 @@ class OnkyoAccessory {
 				}
 			}
 		}
-		// Deduplicate any input entries.
-		// Is this necessary?
-		// var tempRxInputs = JSON.parse(newobj);
-		// var deduped = [];
-		// tempRxInputs['Inputs'].forEach((input, index) => {
-		// 	var dupe = false;
-		// 	deduped.forEach((input2, index2) => {
-		// 		if (input2 == input) {
-		// 			dupe = true;
-		// 			return
-		// 		}
-		// 	})
-		// 	if (!dupe) {
-		// 		deduped.push(input);
-		// 	}
-		// })
-		// tempRxInputs.Inputs = deduped;
-		// RxInputs = tempRxInputs;
-		// this.log.info(tempRxInputs);
 	}
 
 	polling(platform) {
