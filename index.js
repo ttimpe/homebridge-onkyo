@@ -272,6 +272,10 @@ class OnkyoAccessory {
 		}
 		this.state = (response == "on");
 		this.log.debug("eventSystemPower - message: %s, new state %s", response, this.state);
+		//Communicate status
+		if (this.tvService ) {
+			this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state);
+		}
 	}
 
 	eventAudioMuting(response) {
@@ -279,7 +283,7 @@ class OnkyoAccessory {
 		this.log.debug("eventAudioMuting - message: %s, new m_state %s", response, this.m_state);
 		//Communicate status
 		if (this.tvService ) {
-			this.tvService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state, null, "m_statuspoll");
+			this.tvSpeakerService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state, null, "m_statuspoll");
 		}
 	}
 
@@ -306,7 +310,11 @@ class OnkyoAccessory {
 			// Then invalid Input chosen
 			this.log.error("eventInput - ERROR - INVALID INPUT - Model does not support selected input.");
 		}
-		this.getInputSource.bind(this);
+		// this.getInputSource.bind(this);
+		//Communicate status
+		if (this.tvService ) {
+			this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state);
+		}
 	}
 
 	eventVolume(response) {
@@ -321,7 +329,7 @@ class OnkyoAccessory {
 		}
 		//Communicate status
 		if (this.tvService ) {
-			this.tvService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state, null, "v_statuspoll");
+			this.tvSpeakerService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state, null, "v_statuspoll");
 		}
 	}
 
@@ -421,7 +429,7 @@ class OnkyoAccessory {
 		// 	this.m_state = !(powerOn == "on");
 		// 	this.dimmer.getCharacteristic(Characteristic.On).updateValue((powerOn == "on"), null, "power event m_status");
 		// }
-		// this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state, null, "statuspoll");
+		this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state, null, "statuspoll");
 	}
 	
 	getPowerState(callback, context) {
@@ -450,7 +458,7 @@ class OnkyoAccessory {
 				this.log.debug( "getPowerState - PWR QRY: ERROR - current state: %s", this.state);
 			}
 		}.bind(this) );
-		// this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state);
+		this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state);
 	}
 	
 	getVolumeState(callback, context) {
@@ -479,6 +487,10 @@ class OnkyoAccessory {
 				this.log.debug( "getVolumeState - VOLUME QRY: ERROR - current v_state: %s", this.v_state);
 			}
 		}.bind(this) );
+		//Communicate status
+		if (this.tvService ) {
+			this.tvSpeakerService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state);
+		}
 	}
 	
 	setVolumeState(volumeLvl, callback, context) {
@@ -522,6 +534,10 @@ class OnkyoAccessory {
 				this.log.debug( "setVolumeState - VOLUME : ERROR - current v_state: %s", this.v_state);
 			}
 		}.bind(this) );
+		//Communicate status
+		if (this.tvService ) {
+			this.tvSpeakerService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state);
+		}
 	}
 	
 	setVolumeRelative(volumeDirection, callback, context) {
@@ -561,6 +577,10 @@ class OnkyoAccessory {
 		} else {
 			this.log.error( "setVolumeRelative - VOLUME : ERROR - unknown direction sent");
 		}
+		//Communicate status
+		if (this.tvService ) {
+			this.tvSpeakerService.getCharacteristic(Characteristic.Volume).updateValue(this.v_state);
+		}
 	}
 	
 	getMuteState(callback, context) {
@@ -589,6 +609,10 @@ class OnkyoAccessory {
 				this.log.debug( "getMuteState - MUTE QRY: ERROR - current m_state: %s", this.m_state);
 			}
 		}.bind(this) );
+		//Communicate status
+		if (this.tvService ) {
+			this.tvSpeakerService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state);
+		}
 	}
 	
 	setMuteState(muteOn, callback, context) {
@@ -627,6 +651,10 @@ class OnkyoAccessory {
 				}
 			}.bind(this) );
 		}
+		//Communicate status
+		if (this.tvService ) {
+			this.tvSpeakerService.getCharacteristic(Characteristic.Mute).updateValue(this.m_state);
+		}
 	}
 	
 	getInputSource(callback, context) {
@@ -652,6 +680,10 @@ class OnkyoAccessory {
 			}
 		}.bind(this) );
 		callback(null, this.i_state);
+		//Communicate status
+		if (this.tvService ) {
+			this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state);
+		}
 	}
 	
 	setInputSource(source, callback, context) {
@@ -682,6 +714,10 @@ class OnkyoAccessory {
 				this.log.error( "setInputState - INPUT : ERROR - current i_state:%s - Source:%s", this.i_state, source.toString());
 			}
 		}.bind(this) );
+		//Communicate status
+		if (this.tvService ) {
+			this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state);
+		}
 	}
 	
 	remoteKeyPress(button, callback) {
