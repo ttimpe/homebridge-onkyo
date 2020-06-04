@@ -7,8 +7,6 @@ var pollingtoevent = require('polling-to-event');
 var round = require( 'math-round' );
 var info = require('./package.json');
 
-let RxTypes = require('./RxTypes.js');
-
 class OnkyoPlatform {
 	constructor(log, config, api) {
 		this.api = api;

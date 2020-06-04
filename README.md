@@ -56,7 +56,6 @@ Example accessory config (needs to be added to the homebridge config.json):
                     {"input": "cd", "label": "TV/CD"}
                 ],
                 "volume_dimmer": false,
-                "switch_service": false,
                 "filter_inputs": true
             }
         ]
