@@ -139,7 +139,7 @@ class OnkyoAccessory {
 	
 	createRxInput() {
 	// Create the RxInput object for later use.
-		var eiscpData = require('./node_modules/eiscp/eiscp-commands.json');
+		var eiscpData = require('eiscp/eiscp-commands.json');
 		var inSets = [];
 		for (set in eiscpData.modelsets) {
 			eiscpData.modelsets[set].forEach(model => {
