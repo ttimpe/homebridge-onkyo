@@ -4,7 +4,6 @@ let Service
 let Characteristic;
 var RxInputs;
 var pollingtoevent = require('polling-to-event');
-var round = require( 'math-round' );
 var info = require('./package.json');
 
 class OnkyoPlatform {
@@ -319,7 +318,7 @@ class OnkyoAccessory {
 		if (this.mapVolume100) {
 			var volumeMultiplier = this.maxVolume/100;
 			var newVolume = response / volumeMultiplier;
-			this.v_state = round(newVolume);
+			this.v_state = Math.round(newVolume);
 			this.log.debug("eventVolume - message: %s, new v_state %s PERCENT", response, this.v_state);
 		} else {
 			this.v_state = response;
@@ -510,7 +509,7 @@ class OnkyoAccessory {
 		if (this.mapVolume100) {
 			var volumeMultiplier = this.maxVolume/100;
 			var newVolume = volumeMultiplier * volumeLvl;
-			this.v_state = round(newVolume);
+			this.v_state = Math.round(newVolume);
 			this.log.debug("setVolumeState - actual mode, PERCENT, volume v_state: %s", this.v_state);
 		} else if (volumeLvl > this.maxVolume) {
 		//Determin if maxVolume threshold breached, if so set to max.
