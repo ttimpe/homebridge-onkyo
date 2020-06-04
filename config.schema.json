@@ -300,13 +300,13 @@
                             "items": {
                                 "type": "object",
                                 "title": "Inputs",
-                                "description": "'Input' and 'label' pair where 'input' is the input according to the receiver and 'label' is how it will be listed in HomeKit.",
+                                "description": "'input_name' and 'display_name' pair where 'input_name' is the input according to the receiver and 'display_name' is how it will be listed in HomeKit.",
                                 "required": [
-                                    "input",
-                                    "label"
+                                    "input_name",
+                                    "display_name"
                                 ],
                                 "properties": {
-                                    "input": {
+                                    "input_name": {
                                         "type": "string",
                                         "title": "Receiver Input",
                                         "description": "Input according to the receiver.",
@@ -361,9 +361,9 @@
                                             ]}
                                         ]
                                     },
-                                    "label": {
+                                    "display_name": {
                                         "type": "string",
-                                        "title": "Label for HomeKit",
+                                        "title": "Display name for HomeKit",
                                         "description": "How the input will appear in HomeKit."
                                     }
                                 }

@@ -80,26 +80,6 @@ class OnkyoAccessory {
 		}
 
 		this.inputs = this.config.inputs;
-		/* eslint no-return-assign: "warn" */
-
-		// const array_input = {};
-		// 		if (typeof this.config.inputs === undefined) {
-		// 			this.log.warn('There are no INPUTS configured in the configuration. This is OK if you have "filter_inputs" disabled.');
-		// 			this.filter_inputs = false;
-		// 			this.log.debug('Disabled filtering INPUTS.');
-		// 		} else if (typeof this.config.inputs === 'object') {
-		// 			this.log.debug('Configuration contains an INPUTS object.');
-		// 			this.config.inputs.forEach(x => array_input[x.input_name] = x.display_name);
-		// 			// results in: inputs: { TV: 'TV', AUX: 'PS4' }
-		// 			this.inputs = array_input;
-		// 			this.log.debug('This is the list of INPUTS after converting from an object into an array: %s', this.inputs);
-		// 		} else {
-		// 			this.log.warn('Configuration does not contain proper INPUTS configuration.');
-		// 			this.log('Continuing without INPUTS filter option.');
-		// 			this.filter_inputs = false;
-		// 		}
-
-		// 	this.log.debug('Input filtering is finally %s', this.filter_inputs);
 
 		this.cmdMap = new Array(2);
 		this.cmdMap.main = new Array(4);
@@ -378,7 +358,6 @@ class OnkyoAccessory {
 			// Then invalid Input chosen
 			this.log.error('eventInput - ERROR - INVALID INPUT - Model does not support selected input.');
 		}
-		// this.getInputSource.bind(this);
 
 		// Communicate status
 		if (this.tvService)
@@ -410,7 +389,7 @@ class OnkyoAccessory {
 	// GET AND SET FUNCTIONS
 	/// /////////////////////
 	setPowerState(powerOn, callback, context) {
-	// if context is statuspoll, then we need to ensure this we do not set the actual value
+	// if context is statuspoll, then we need to ensure that we do not set the actual value
 		if (context && context === 'statuspoll') {
 			this.log.debug('setPowerState - polling mode, ignore, state: %s', this.state);
 			callback(null, this.state);
@@ -457,10 +436,10 @@ class OnkyoAccessory {
 						let label = this.defaultInput;
 						if (this.inputs) {
 							this.inputs.forEach((input, _) => {
-								if (input.input === this.default)
-									label = input.input;
-								else if (input.label === this.defaultInput)
-									label = input.label;
+								if (input.input_name === this.default)
+									label = input.input_name;
+								else if (input.display_name === this.defaultInput)
+									label = input.display_name;
 							});
 						}
 
@@ -479,7 +458,6 @@ class OnkyoAccessory {
 						}
 				}
 			});
-			// }.bind(this) );
 		} else {
 			this.log.debug('setPowerState - actual mode, power state: %s, switching to OFF', this.state);
 			this.eiscp.command(this.zone + '.' + this.cmdMap[this.zone].power + '=standby', (error, _) => {
@@ -492,7 +470,6 @@ class OnkyoAccessory {
 					// }
 				}
 			});
-			// }.bind(this) );
 		}
 
 		// if (this.volume_dimmer) {
@@ -528,7 +505,6 @@ class OnkyoAccessory {
 				this.log.debug('getPowerState - PWR QRY: ERROR - current state: %s', this.state);
 			}
 		});
-		// }.bind(this) );
 		this.tvService.getCharacteristic(Characteristic.Active).updateValue(this.state);
 	}
 
@@ -558,7 +534,6 @@ class OnkyoAccessory {
 				this.log.debug('getVolumeState - VOLUME QRY: ERROR - current v_state: %s', this.v_state);
 			}
 		});
-		// }.bind(this) );
 
 		// Communicate status
 		if (this.tvService)
@@ -607,7 +582,6 @@ class OnkyoAccessory {
 				this.log.debug('setVolumeState - VOLUME : ERROR - current v_state: %s', this.v_state);
 			}
 		});
-		// }.bind(this) );
 
 		// Communicate status
 		if (this.tvService)
@@ -684,7 +658,6 @@ class OnkyoAccessory {
 				this.log.debug('getMuteState - MUTE QRY: ERROR - current m_state: %s', this.m_state);
 			}
 		});
-		// }.bind(this) );
 
 		// Communicate status
 		if (this.tvService)
@@ -727,7 +700,6 @@ class OnkyoAccessory {
 					this.log.error('setMuteState - MUTE OFF: ERROR - current m_state: %s', this.m_state);
 				}
 			});
-			// }.bind(this) );
 		}
 
 		// Communicate status
@@ -795,7 +767,7 @@ class OnkyoAccessory {
 			if (error)
 				this.log.error('setInputState - INPUT : ERROR - current i_state:%s - Source:%s', this.i_state, source.toString());
 		});
-		// }.bind(this) );
+
 		// Communicate status
 		if (this.tvService)
 			this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.i_state);
@@ -814,7 +786,6 @@ class OnkyoAccessory {
 					this.log.error('remoteKeyPress - INPUT: ERROR pressing button %s', press);
 				}
 			});
-			// }.bind(this) );
 		} else {
 			this.log.error('Remote button %d not supported.', button);
 		}
@@ -832,10 +803,10 @@ class OnkyoAccessory {
 		// If input name mappings are provided, use them.
 		// Option to only configure specified inputs with filter_inputs
 		if (this.filter_inputs) {
-			// Check the RxInpu.Inputs items to see if each exists in this.inputs. Return new array of those that do.
+			// Check the RxInputs.Inputs items to see if each exists in this.inputs. Return new array of those that do.
 			RxInputs.Inputs = RxInputs.Inputs.filter(rxinput => {
 				return this.inputs.some(input => {
-					return input.input === rxinput.label;
+					return input.input_name === rxinput.label;
 				});
 			});
 		}
@@ -847,8 +818,8 @@ class OnkyoAccessory {
 			let inputName = i.label;
 			if (this.inputs) {
 				this.inputs.forEach((input, _) => {
-					if (input.input === i.label)
-						inputName = input.label;
+					if (input.input_name === i.label)
+						inputName = input.display_name;
 				});
 			}
 
