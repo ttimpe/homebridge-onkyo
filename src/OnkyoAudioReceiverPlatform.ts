@@ -34,10 +34,9 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 	private numberReceivers: number = 0
 	private receiverConfigs :any[] = []
 
-	private api: API
+	public api: API
 	public log: Logging
-	public readonly Service =  this.api.hap.Service;
-	public readonly Characteristic = this.api.hap.Characteristic;
+
 	constructor(log: Logging, config: PlatformConfig, api: API) {
 		this.log = log
 		this.api = api
