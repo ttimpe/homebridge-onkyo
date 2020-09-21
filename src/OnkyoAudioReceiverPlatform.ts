@@ -28,7 +28,6 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 
 
 
-	private receivers: any
 	private receiverAccessories: PlatformAccessory[] = []
 	private numberReceivers: number = 0
 	private receiverConfigs :any
@@ -36,7 +35,7 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 	public api: API
 	public log: Logging
 
-	
+
 
 	constructor(log: Logging, public readonly config: PlatformConfig, api: API) {
 		this.log = log
@@ -58,7 +57,7 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 			var accessory = new this.api.platformAccessory(receiver.name, uuid, Categories.AUDIO_RECEIVER)
 			var receiverAccessory = new OnkyoAudioReceiverAccessory(this, accessory, receiver, this.log)
 
-			this.receivers.push(receiverAccessory)
+			this.receiverConfigs.push(receiverAccessory)
 			this.receiverAccessories.push(accessory)
 		})
 		this.api.publishExternalAccessories(PLUGIN_NAME, this.receiverAccessories)
