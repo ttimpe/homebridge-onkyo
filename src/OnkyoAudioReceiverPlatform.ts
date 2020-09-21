@@ -36,6 +36,8 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 	public api: API
 	public log: Logging
 
+	
+
 	constructor(log: Logging, public readonly config: PlatformConfig, api: API) {
 		this.log = log
 		this.api = api
