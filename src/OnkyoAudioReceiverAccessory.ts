@@ -222,6 +222,7 @@ export default class OnkyoAudioReceiverAccessory {
 		}
 
 		// Drop last comma first
+		this.log.debug(newobj)
 		newobj = newobj.slice(0, -1) + ']}';
 		RxInputs = JSON.parse(newobj);
 	}
