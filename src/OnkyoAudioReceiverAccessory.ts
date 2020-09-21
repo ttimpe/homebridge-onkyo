@@ -901,7 +901,7 @@ export default class OnkyoAudioReceiverAccessory {
 	}
 
 	createTvSpeakerService(tvService: Service) {
-		this.tvSpeakerService = new this.platform.api.hap.Service.TelevisionSpeaker(this.name + ' Volume', 'tvSpeakerService');
+		this.tvSpeakerService = this.accessory.addService(this.platform.api.hap.Service.TelevisionSpeaker);
 		this.tvSpeakerService
 			.setCharacteristic(this.platform.api.hap.Characteristic.Active, this.platform.api.hap.Characteristic.Active.ACTIVE)
 			.setCharacteristic(this.platform.api.hap.Characteristic.VolumeControlType, this.platform.api.hap.Characteristic.VolumeControlType.ABSOLUTE);
@@ -917,7 +917,6 @@ export default class OnkyoAudioReceiverAccessory {
 			.on('get', this.getVolumeState.bind(this))
 			.on('set', this.setVolumeState.bind(this));
 
-		tvService.addLinkedService(this.tvSpeakerService);
 		this.enabledServices.push(this.tvSpeakerService);
 	}
 }
