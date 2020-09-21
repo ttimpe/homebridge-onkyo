@@ -84,6 +84,7 @@ export default class OnkyoAudioReceiverAccessory {
 		this.ip_address	= this.config.ip_address;
 		this.log.debug('IP %s', this.ip_address);
 		this.model = this.config.model;
+
 		this.log.debug('Model %s', this.model);
 		this.zone = this.config.zone || 'main';
 
@@ -381,8 +382,8 @@ export default class OnkyoAudioReceiverAccessory {
 		}
 
 		// Communicate status
-		if (this.tvService)
-			this.tvService.getCharacteristic(this.platform.api.hap.Characteristic.Volume).updateValue(this.v_state, null, 'v_statuspoll');
+		if (this.tvSpeakerService)
+			this.tvSpeakerService.getCharacteristic(this.platform.api.hap.Characteristic.Volume).updateValue(this.v_state, null, 'v_statuspoll');
 	}
 
 	eventClose(response: any) {
