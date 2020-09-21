@@ -31,7 +31,7 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 	private receivers: any
 	private receiverAccessories: PlatformAccessory[] = []
 	private numberReceivers: number = 0
-	private receiverConfigs :any[] = []
+	private receiverConfigs :any
 
 	public api: API
 	public log: Logging
@@ -41,8 +41,8 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 		this.api = api
 		this.config = config
 		
-		this.receivers = this.config['receivers']
-
+		this.receiverConfigs = this.config['receivers']
+		this.log.info("receivers are", this.receiverConfigs)
 		this.createAccessories()
 	}
 
@@ -50,7 +50,7 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 		this.numberReceivers = this.receiverConfigs.length
 		this.log.debug("Creating %s receivers...", this.numberReceivers)
 	
-		this.receiverConfigs.forEach((receiver) => {
+		this.receiverConfigs.forEach((receiver: any) => {
 			const uuid = this.api.hap.uuid.generate("homebridge-onkyo-reiver-" + receiver.name)
 			this.log.info("Creating accessory " + receiver.name + "With uuid " + uuid)
 			var accessory = new this.api.platformAccessory(receiver.name, uuid, Categories.AUDIO_RECEIVER)
