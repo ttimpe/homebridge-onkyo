@@ -164,9 +164,9 @@ export default class OnkyoAudioReceiverAccessory {
 		const infoService = this.createAccessoryInformationService();
 		this.enabledServices.push(infoService);
 		this.tvService = this.createTvService();
-		this.enabledServices.push(this.tvService);
+		this.addSources(this.tvService)
 		this.createTvSpeakerService(this.tvService);
-		this.enabledServices.push(...this.addSources(this.tvService));
+		this.enabledServices.push(this.tvService);
 	}
 
 	getServices() {
@@ -917,6 +917,5 @@ export default class OnkyoAudioReceiverAccessory {
 			.on('get', this.getVolumeState.bind(this))
 			.on('set', this.setVolumeState.bind(this));
 
-		this.enabledServices.push(this.tvSpeakerService);
 	}
 }
