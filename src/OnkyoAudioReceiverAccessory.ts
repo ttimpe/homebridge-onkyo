@@ -186,6 +186,8 @@ export default class OnkyoAudioReceiverAccessory {
 		}
 		// Drop last comma first
 		newobj = newobj.slice(0,-1) + ']}';
+		this.log.debug("RxInputs is ",newobj)
+
 		RxInputs = JSON.parse(newobj)
 		if (this.filter_inputs) {
 			var length = RxInputs['Inputs'].length;
