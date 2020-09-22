@@ -173,11 +173,9 @@ export default class OnkyoAudioReceiverAccessory {
 		this.polling(this);
 
 		this.createAccessoryInformationService();
-		this.enabledServices.push(this.informationService)
 		this.createTvService()
 		this.addSources()
 		this.createTvSpeakerService()
-		this.enabledServices.push(this.tvSpeakerService)
 	}
 
 	getServices() {
@@ -841,7 +839,7 @@ export default class OnkyoAudioReceiverAccessory {
 	}
 
 	createAccessoryInformationService() {
-		this.informationService = new this.Service.AccessoryInformation();
+		this.informationService = this.accessory.addService(this.Service.AccessoryInformation);
 		this.informationService
 			.setCharacteristic(this.Characteristic.Manufacturer, "Onkyo")
 			.setCharacteristic(this.Characteristic.Model, this.model)
