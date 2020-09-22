@@ -27,8 +27,12 @@ export default class OnkyoAudioReceiverAccessory {
 	private eiscp = require('eiscp')
 	private name: string = ''
 	private enabledServices: Service[] = []
+	
+
 	private tvService: Service
 	private tvSpeakerService: Service
+	private informationService: Service
+
 	private setAttempt: number = 0
 	private ip_address: string = ''
 	private model: string = ''
@@ -161,12 +165,12 @@ export default class OnkyoAudioReceiverAccessory {
 		this.createRxInput();
 		this.polling(this);
 
-		const infoService = this.createAccessoryInformationService();
-		this.enabledServices.push(infoService);
-		this.tvService = this.createTvService();
+		this.createAccessoryInformationService();
+		this.enabledServices.push(this.informationService)
+		this.createTvService()
 		this.addSources(this.tvService)
-		this.createTvSpeakerService(this.tvService);
-		this.enabledServices.push(this.tvService);
+		this.createTvSpeakerService(this.tvService)
+		this.enabledServices.push(this.tvSpeakerService)
 	}
 
 	getServices() {
@@ -828,76 +832,68 @@ export default class OnkyoAudioReceiverAccessory {
 						inputName = input.display_name;
 				});
 			}
-
-			const input = this.setupInput(i.code, inputName, hapId, service);
-			return input;
+			this.setupInput(i.code, inputName, hapId);
 		});
-		return inputs;
 	}
 
-	setupInput(inputCode: any, name: string, hapId: any, television: Service) {
-		const input = new this.platform.api.hap.Service.InputSource(`${this.name} ${name}`, inputCode);
-		const inputSourceType = this.platform.api.hap.Characteristic.InputSourceType.HDMI;
+	setupInput(inputCode: any, name: string, hapId: any) {
+		const input = this.accessory.addService(this.platform.api.hap.Service.InputSource, inputCode, name);
 
 		input
 			.setCharacteristic(this.platform.api.hap.Characteristic.Identifier, hapId)
 			.setCharacteristic(this.platform.api.hap.Characteristic.ConfiguredName, name)
+			.setCharacteristic(this.platform.api.hap.Characteristic.InputSourceType, this.platform.api.hap.Characteristic.InputSourceType.HDMI)
 			.setCharacteristic(
 			this.platform.api.hap.Characteristic.IsConfigured,
 			this.platform.api.hap.Characteristic.IsConfigured.CONFIGURED
 			)
-			.setCharacteristic(this.platform.api.hap.Characteristic.InputSourceType, inputSourceType);
 
 		input.getCharacteristic(this.platform.api.hap.Characteristic.ConfiguredName).setProps({
 			perms: [this.platform.api.hap.Characteristic.Perms.READ]
 		});
-
-		television.addLinkedService(input);
-		return input;
+		this.tvService.addLinkedService(input);
 	}
 
 	createAccessoryInformationService() {
-		const informationService = new this.platform.api.hap.Service.AccessoryInformation();
-		informationService
+		this.informationService = new this.platform.api.hap.Service.AccessoryInformation();
+		this.informationService
 			.setCharacteristic(this.platform.api.hap.Characteristic.Manufacturer, "Onkyo")
 			.setCharacteristic(this.platform.api.hap.Characteristic.Model, this.model)
 			.setCharacteristic(this.platform.api.hap.Characteristic.SerialNumber, "SERIAL")
 			.setCharacteristic(this.platform.api.hap.Characteristic.FirmwareRevision, info.version)
 			.setCharacteristic(this.platform.api.hap.Characteristic.Name, this.name);
-
-		return informationService;
 	}
 
 	
 	createTvService() {
 		this.log.debug('Creating TV this.platform.api.hap.Service for receiver %s', this.name);
-		const tvService = new this.platform.api.hap.Service.Television(this.name, 'AUDIO_RECEIVER');
+		this.tvService = this.accessory.addService(this.platform.api.hap.Service.Television)
 
-		tvService
+		this.tvService.setCharacteristic(this.platform.api.hap.Characteristic.ConfiguredName, this.name)
+
+		this.tvService
 			.getCharacteristic(this.platform.api.hap.Characteristic.ConfiguredName)
 			.setValue(this.name)
 			.setProps({
 				perms: [this.platform.api.hap.Characteristic.Perms.READ]
 			});
 
-		tvService
+		this.tvService
 			.setCharacteristic(this.platform.api.hap.Characteristic.SleepDiscoveryMode, this.platform.api.hap.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 
-		tvService
+		this.tvService
 			.getCharacteristic(this.platform.api.hap.Characteristic.Active)
 			.on('get', this.getPowerState.bind(this))
 			.on('set', this.setPowerState.bind(this));
 
-		tvService
+		this.tvService
 			.getCharacteristic(this.platform.api.hap.Characteristic.ActiveIdentifier)
 			.on('set', this.setInputSource.bind(this))
 			.on('get', this.getInputSource.bind(this));
 
-		tvService
+		this.tvService
 			.getCharacteristic(this.platform.api.hap.Characteristic.RemoteKey)
 			.on('set', this.remoteKeyPress.bind(this));
-
-		return tvService;
 	}
 
 	createTvSpeakerService(tvService: Service) {
