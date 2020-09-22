@@ -173,9 +173,13 @@ export default class OnkyoAudioReceiverAccessory {
 		this.polling(this);
 
 		this.createAccessoryInformationService();
+		this.enabledServices.push(this.informationService)
 		this.createTvService()
 		this.addSources()
+		this.enabledServices.push(this.tvService)
+
 		this.createTvSpeakerService()
+		this.enabledServices.push(this.tvSpeakerService)
 	}
 
 	getServices() {
@@ -821,7 +825,7 @@ export default class OnkyoAudioReceiverAccessory {
 	}
 
 	setupInput(inputCode: any, name: string, hapId: any) {
-		const input = this.accessory.addService(this.Service.InputSource, inputCode, name);
+		const input = new this.Service(this.Service.InputSource, inputCode, name);
 
 		input
 			.setCharacteristic(this.Characteristic.Identifier, hapId)
@@ -839,7 +843,7 @@ export default class OnkyoAudioReceiverAccessory {
 	}
 
 	createAccessoryInformationService() {
-		this.informationService = this.accessory.addService(this.Service.AccessoryInformation);
+		this.informationService = new this.Service.AccessoryInformation();
 		this.informationService
 			.setCharacteristic(this.Characteristic.Manufacturer, "Onkyo")
 			.setCharacteristic(this.Characteristic.Model, this.model)
