@@ -258,9 +258,7 @@ export default class OnkyoAudioReceiverAccessory {
 			statusemitter.on('statuspoll', (data: any) => {
 				that.state = data;
 				that.log.debug('event - PWR status poller - new state: ', that.state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(this.Characteristic.Active).updateValue(that.state, null, 'statuspoll');
-				// }
+
 			});
 	// Audio-Input Polling
 			const i_statusemitter = pollingtoevent((done: any) => {
@@ -274,9 +272,7 @@ export default class OnkyoAudioReceiverAccessory {
 			i_statusemitter.on('i_statuspoll', (data: any) => {
 				that.i_state = data;
 				that.log.debug('event - INPUT status poller - new i_state: ', that.i_state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(this.Characteristic.ActiveIdentifier).updateValue(that.i_state, null, 'i_statuspoll');
-				// }
+
 			});
 	// Audio-Muting Polling
 			const m_statusemitter = pollingtoevent((done: any) => {
@@ -290,9 +286,7 @@ export default class OnkyoAudioReceiverAccessory {
 			m_statusemitter.on('m_statuspoll', (data: any) => {
 				that.m_state = data;
 				that.log.debug('event - MUTE status poller - new m_state: ', that.m_state);
-				// if (that.tvService ) {
-				// 	that.tvService.getCharacteristic(this.Characteristic.Mute).updateValue(that.m_state, null, 'm_statuspoll');
-				// }
+
 			});
 	// Volume Polling
 			const v_statusemitter = pollingtoevent((done: any) => {
@@ -335,18 +329,14 @@ export default class OnkyoAudioReceiverAccessory {
 		// Communicate status
 		if (this.tvService)
 			this.tvService.getCharacteristic(this.Characteristic.Active).updateValue(this.state);
-		// if (this.volume_dimmer) {
-		// 	this.m_state = !(response == 'on');
-		// 	this.dimmer.getCharacteristic(this.Characteristic.On).updateValue((response == 'on'), null, 'power event m_status');
-		// }
+
 	}
 
 	eventAudioMuting(response: any) {
 		this.m_state = (response === 'on');
 		this.log.debug('eventAudioMuting - message: %s, new m_state %s', response, this.m_state);
 		// Communicate status
-		if (this.tvService)
-			this.tvService.getCharacteristic(this.Characteristic.Mute).updateValue(this.m_state, null, 'm_statuspoll');
+		this.tvSpeakerService.getCharacteristic(this.Characteristic.Mute).updateValue(this.m_state, null, 'm_statuspoll');
 	}
 
 	eventInput(response: any) {
@@ -367,7 +357,6 @@ export default class OnkyoAudioReceiverAccessory {
 			this.i_state = index + 1;
 
 			this.log.debug('eventInput - message: %s - new i_state: %s - input: %s', response, this.i_state, input);
-			// this.tvService.getCharacteristic(this.Characteristic.ActiveIdentifier).updateValue(this.i_state);
 		} else {
 			// Then invalid Input chosen
 			this.log.error('eventInput - ERROR - INVALID INPUT - Model does not support selected input.');
@@ -479,17 +468,10 @@ export default class OnkyoAudioReceiverAccessory {
 				if (error) {
 					this.state = false;
 					this.log.error('setPowerState - PWR OFF: ERROR - current state: %s', this.state);
-					// if (this.tvService ) {
-					// 	this.tvService.getCharacteristic(this.Characteristic.Active).updateValue(this.state, null, 'statuspoll');
-					// }
 				}
 			});
 		}
 
-		// if (this.volume_dimmer) {
-		// 	this.m_state = !(powerOn == 'on');
-		// 	this.dimmer.getCharacteristic(this.Characteristic.On).updateValue((powerOn == 'on'), null, 'power event m_status');
-		// }
 		this.tvService.getCharacteristic(this.Characteristic.Active).updateValue(this.state);
 	}
 
