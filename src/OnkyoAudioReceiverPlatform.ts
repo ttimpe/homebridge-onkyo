@@ -54,8 +54,7 @@ export default class OnkyoAudioReceiverPlatform implements IndependentPlatformPl
 		this.receiverConfigs.forEach((receiver: any) => {
 			const uuid = this.api.hap.uuid.generate("homebridge-onkyo-reiver-" + receiver.name)
 			this.log.info("Creating accessory " + receiver.name + "With uuid " + uuid)
-			var accessory = new this.api.platformAccessory(receiver.name, uuid)
-			accessory.category = this.api.hap.Categories.AUDIO_RECEIVER
+			var accessory = new this.api.platformAccessory(receiver.name, uuid, Categories.AUDIO_RECEIVER)
 			var receiverAccessory = new OnkyoAudioReceiverAccessory(this, accessory, receiver, this.log)
 
 			this.receiverConfigs.push(receiverAccessory)
