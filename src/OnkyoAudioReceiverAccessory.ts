@@ -840,6 +840,7 @@ export default class OnkyoAudioReceiverAccessory {
 			perms: [this.Characteristic.Perms.READ]
 		});
 		this.tvService.addLinkedService(input);
+		this.enabledServices.push(input)
 	}
 
 	createAccessoryInformationService() {
