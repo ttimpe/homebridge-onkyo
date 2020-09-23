@@ -177,6 +177,8 @@ export default class OnkyoAudioReceiverAccessory {
 		this.enabledServices.push(this.informationService)
 		this.createTvService()
 		this.addSources()
+		this.log.info("created tv service", this.tvService)
+
 		this.createTvSpeakerService()
 		this.enabledServices.push(this.tvService)
 		this.enabledServices.push(this.tvSpeakerService)	
@@ -912,7 +914,6 @@ export default class OnkyoAudioReceiverAccessory {
 				this.tvService
 				.getCharacteristic(this.Characteristic.RemoteKey)
 				.on('set', this.remoteKeyPress.bind(this));
-				this.log.info("created tv service", this.tvService)
 
 			}
 
