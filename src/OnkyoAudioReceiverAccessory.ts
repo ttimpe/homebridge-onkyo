@@ -88,6 +88,7 @@ export default class OnkyoAudioReceiverAccessory {
 		this.log.debug('Debug mode enabled');
 
 		this.name = this.config.name;
+		this.accessory.category = Categories.AUDIO_RECEIVER
 
 
 		this.log.debug('name %s', this.name);
@@ -871,7 +872,7 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createAccessoryInformationService() {
-				this.informationService = new this.Service.AccessoryInformation()
+				this.informationService = this.accessory.addService(this.Service.AccessoryInformation)
 				this.informationService
 				.setCharacteristic(this.Characteristic.Manufacturer, "Onkyo")
 				.setCharacteristic(this.Characteristic.Model, this.model)
@@ -883,7 +884,7 @@ export default class OnkyoAudioReceiverAccessory {
 
 			createTvService() {
 				this.log.debug('Creating TV this.platform.api.hap.Service for receiver %s', this.name);
-				this.tvService = new this.Service.Television(this.name, 'AUDIO_RECEIVER');
+				this.tvService = this.accessory.addService(this.Service.Television, this.name, 'AUDIO_RECEIVER');
 
 				this.tvService
 				.getCharacteristic(this.Characteristic.ConfiguredName)
@@ -912,7 +913,7 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createTvSpeakerService() {
-				this.tvSpeakerService = new this.Service.TelevisionSpeaker(this.name)
+				this.tvSpeakerService = this.accessory.addService(this.Service.TelevisionSpeaker, this.name)
 				this.tvSpeakerService
 				.setCharacteristic(this.Characteristic.Active, this.Characteristic.Active.ACTIVE)
 				.setCharacteristic(this.Characteristic.VolumeControlType, this.Characteristic.VolumeControlType.ABSOLUTE);
