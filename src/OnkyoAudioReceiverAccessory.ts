@@ -917,7 +917,7 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createTvSpeakerService() {
-				this.tvSpeakerService = this.accessory.getService(this.Service.Television)
+				this.tvSpeakerService = this.accessory.getService(this.Service.TelevisionSpeaker)
 				if (this.tvSpeakerService == null) {
 					this.tvSpeakerService = this.accessory.addService(this.Service.TelevisionSpeaker, this.name)
 				}
