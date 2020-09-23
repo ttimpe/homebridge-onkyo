@@ -342,10 +342,6 @@ export default class OnkyoAudioReceiverAccessory {
 		// Communicate status
 		if (this.tvService)
 			this.tvService.getCharacteristic(this.Characteristic.Active).updateValue(this.state);
-		// if (this.volume_dimmer) {
-			// 	this.m_state = !(response == 'on');
-			// 	this.dimmer.getCharacteristic(this.Characteristic.On).updateValue((response == 'on'), null, 'power event m_status');
-			// }
 		}
 
 		eventAudioMuting(response: any) {
@@ -866,8 +862,6 @@ export default class OnkyoAudioReceiverAccessory {
 				input.getCharacteristic(this.Characteristic.ConfiguredName).setProps({
 					perms: [this.Characteristic.Perms.READ]
 				});
-
-				this.log.info("Created input service", input)
 
 				this.tvService.addLinkedService(input)
 				this.enabledServices.push(input)
