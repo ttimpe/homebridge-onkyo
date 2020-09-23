@@ -165,14 +165,14 @@ export default class OnkyoAudioReceiverAccessory {
 			{host: this.ip_address, reconnect: true, model: this.model}
 			);
 
-		this.setUp();
+		this.setUp()
 	}
 
 	setUp() {
 		this.createRxInput();
 		this.polling(this);
 
-		this.createAccessoryInformationService();
+		this.createAccessoryInformationService()
 		this.enabledServices.push(this.informationService)
 		this.createTvService()
 		this.addSources()
@@ -182,7 +182,9 @@ export default class OnkyoAudioReceiverAccessory {
 	}
 
 	getServices() {
-		return this.enabledServices;
+		this.log.info("enabled service are", this.enabledServices)
+
+		return this.enabledServices
 	}
 
 	createRxInput() {
@@ -869,7 +871,7 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createAccessoryInformationService() {
-				this.informationService = new this.Service.AccessoryInformation();
+				this.informationService = new this.Service.AccessoryInformation()
 				this.informationService
 				.setCharacteristic(this.Characteristic.Manufacturer, "Onkyo")
 				.setCharacteristic(this.Characteristic.Model, this.model)
