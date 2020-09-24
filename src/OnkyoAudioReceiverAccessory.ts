@@ -848,7 +848,7 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			setupInput(inputCode: any, name: string, hapId: any) {
-				const input = new this.Service.InputSource(`${this.name} ${name}`, inputCode);
+				const input = this.accessory.addService(this.Service.InputSource, inputCode, name)
 				const inputSourceType = this.Characteristic.InputSourceType.HDMI;
 
 				input
