@@ -866,9 +866,9 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createAccessoryInformationService() {
-				//this.informationService = this.accessory.getService(this.Service.AccessoryInformation)
+				this.informationService = this.accessory.getService(this.Service.AccessoryInformation)
 				//if (this.informationService == null) {
-					this.informationService = this.accessory.addService(this.Service.AccessoryInformation)
+				//	this.informationService = this.accessory.addService(this.Service.AccessoryInformation)
 				//}
 				this.informationService
 				.setCharacteristic(this.Characteristic.Manufacturer, "Onkyo")
