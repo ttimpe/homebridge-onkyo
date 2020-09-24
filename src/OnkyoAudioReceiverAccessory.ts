@@ -177,7 +177,7 @@ export default class OnkyoAudioReceiverAccessory {
 		this.enabledServices.push(this.informationService)
 		this.createTvService()
 		this.addSources()
-		this.log.info("created tv service", this.tvService)
+		this.log.info("created tv service")
 
 		this.createTvSpeakerService()
 		this.enabledServices.push(this.tvService)
@@ -185,8 +185,7 @@ export default class OnkyoAudioReceiverAccessory {
 	}
 
 	getServices() {
-		this.log.info("enabled service are", this.enabledServices)
-
+		this.log.info("enabled " + this.enabledServices.length + " services")
 		return this.enabledServices
 	}
 
@@ -864,6 +863,7 @@ export default class OnkyoAudioReceiverAccessory {
 				input.getCharacteristic(this.Characteristic.ConfiguredName).setProps({
 					perms: [this.Characteristic.Perms.READ]
 				});
+				this.log.info("Creating input " + inputCode + " with name " + name)
 
 				this.tvService.addLinkedService(input)
 				this.enabledServices.push(input)
@@ -938,7 +938,6 @@ export default class OnkyoAudioReceiverAccessory {
 				.on('set', this.setVolumeState.bind(this))
 				this.tvService.addLinkedService(this.tvSpeakerService)
 
-				this.log('created tvSpeakerService', this.tvSpeakerService)
 
 			}
 		}
