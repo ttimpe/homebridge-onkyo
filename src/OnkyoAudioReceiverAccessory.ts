@@ -345,8 +345,8 @@ export default class OnkyoAudioReceiverAccessory {
 			this.m_state = (response === 'on');
 			this.log.debug('eventAudioMuting - message: %s, new m_state %s', response, this.m_state);
 			// Communicate status
-			if (this.tvService)
-				this.tvService.getCharacteristic(this.Characteristic.Mute).updateValue(this.m_state, null, 'm_statuspoll');
+			if (this.tvSpeakerService)
+				this.tvSpeakerService.getCharacteristic(this.Characteristic.Mute).updateValue(this.m_state, null, 'm_statuspoll');
 		}
 
 		eventInput(response: any) {
@@ -844,7 +844,7 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			setupInput(inputCode: any, name: string, hapId: any) {
-				const input = this.accessory.addService(this.Service.InputSource, inputCode, name)
+				const input = new this.Service.InputSource(name, inputCode)
 				const inputSourceType = this.Characteristic.InputSourceType.HDMI;
 
 				input
@@ -862,6 +862,7 @@ export default class OnkyoAudioReceiverAccessory {
 				this.log.info("Creating input " + inputCode + " with name " + name)
 
 				this.tvService.addLinkedService(input)
+				this.accessory.addService(input)
 			}
 
 			createAccessoryInformationService() {
