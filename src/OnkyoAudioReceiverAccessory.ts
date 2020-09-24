@@ -674,7 +674,7 @@ export default class OnkyoAudioReceiverAccessory {
 				});
 
 				// Communicate status
-				if (this.tvService)
+				if (this.tvSpeakerService)
 					this.tvSpeakerService.getCharacteristic(this.Characteristic.Mute).updateValue(this.m_state);
 			}
 
@@ -717,7 +717,7 @@ export default class OnkyoAudioReceiverAccessory {
 				}
 
 				// Communicate status
-				if (this.tvService)
+				if (this.tvSpeakerService)
 					this.tvSpeakerService.getCharacteristic(this.Characteristic.Mute).updateValue(this.m_state);
 			}
 
@@ -866,10 +866,10 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createAccessoryInformationService() {
-				this.informationService = this.accessory.getService(this.Service.AccessoryInformation)
-				if (this.informationService == null) {
+				//this.informationService = this.accessory.getService(this.Service.AccessoryInformation)
+				//if (this.informationService == null) {
 					this.informationService = this.accessory.addService(this.Service.AccessoryInformation)
-				}
+				//}
 				this.informationService
 				.setCharacteristic(this.Characteristic.Manufacturer, "Onkyo")
 				.setCharacteristic(this.Characteristic.Model, this.model)
@@ -882,10 +882,10 @@ export default class OnkyoAudioReceiverAccessory {
 
 			createTvService() {
 				this.log.info('Creating TV this.platform.api.hap.Service for receiver %s', this.name);
-				this.tvService = this.accessory.getService(this.Service.Television)
-				if (this.tvService == null) {
+			//	this.tvService = this.accessory.getService(this.Service.Television)
+			//	if (this.tvService == null) {
 					this.tvService = this.accessory.addService(this.Service.Television, this.name, 'AUDIO_RECEIVER');
-				}
+			//	}
 
 				this.tvService
 				.getCharacteristic(this.Characteristic.ConfiguredName)
@@ -914,10 +914,10 @@ export default class OnkyoAudioReceiverAccessory {
 			}
 
 			createTvSpeakerService() {
-				this.tvSpeakerService = this.accessory.getService(this.Service.TelevisionSpeaker)
-				if (this.tvSpeakerService == null) {
+			//	this.tvSpeakerService = this.accessory.getService(this.Service.TelevisionSpeaker)
+			//	if (this.tvSpeakerService == null) {
 					this.tvSpeakerService = this.accessory.addService(this.Service.TelevisionSpeaker, this.name)
-				}
+			//	}
 				this.tvSpeakerService
 				.setCharacteristic(this.Characteristic.Active, this.Characteristic.Active.ACTIVE)
 				.setCharacteristic(this.Characteristic.VolumeControlType, this.Characteristic.VolumeControlType.ABSOLUTE);
