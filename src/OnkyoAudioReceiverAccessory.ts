@@ -28,7 +28,6 @@ var info = require('../package.json')
 export default class OnkyoAudioReceiverAccessory {
 	private eiscp = require('eiscp')
 	private name: string = ''
-	private enabledServices: Service[] = []
 	private tvService: Service
 	private tvSpeakerService: Service
 	private informationService: Service
@@ -174,14 +173,11 @@ export default class OnkyoAudioReceiverAccessory {
 		this.polling(this);
 
 		this.createAccessoryInformationService()
-		this.enabledServices.push(this.informationService)
 		this.createTvService()
+		this.createTvSpeakerService()
 		this.addSources()
 		this.log.info("created tv service")
 
-		this.createTvSpeakerService()
-		this.enabledServices.push(this.tvService)
-		this.enabledServices.push(this.tvSpeakerService)	
 	}
 
 
@@ -642,7 +638,7 @@ export default class OnkyoAudioReceiverAccessory {
 				}
 
 				// Communicate status
-				if (this.tvService)
+				if (this.tvSpeakerService)
 					this.tvSpeakerService.getCharacteristic(this.Characteristic.Volume).updateValue(this.v_state);
 			}
 
@@ -861,9 +857,9 @@ export default class OnkyoAudioReceiverAccessory {
 				});
 				this.log.info("Creating input " + inputCode + " with name " + name)
 
-				this.accessory.addService(input)
 
 				this.tvService.addLinkedService(input)
+				this.accessory.addService(input)
 			}
 
 			createAccessoryInformationService() {
