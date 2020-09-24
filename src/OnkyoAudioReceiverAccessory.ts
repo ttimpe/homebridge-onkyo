@@ -862,6 +862,7 @@ export default class OnkyoAudioReceiverAccessory {
 				this.log.info("Creating input " + inputCode + " with name " + name)
 
 				this.tvService.addLinkedService(input)
+				this.accessory.addService(input)
 			}
 
 			createAccessoryInformationService() {
