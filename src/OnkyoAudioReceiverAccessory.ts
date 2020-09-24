@@ -184,10 +184,6 @@ export default class OnkyoAudioReceiverAccessory {
 		this.enabledServices.push(this.tvSpeakerService)	
 	}
 
-	getServices() {
-		this.log.info("enabled " + this.enabledServices.length + " services")
-		return this.enabledServices
-	}
 
 	createRxInput() {
 		// Create the RxInput object for later use.
